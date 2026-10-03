@@ -108,7 +108,8 @@ function encode(raw: string): void {
     '+faststart',
     `${MEDIA}/promo.mp4`,
   ]);
-  run(['-t', '13', '-vf', gif, `${MEDIA}/promo.gif`]);
+  // The teaser is the first job drawn as its sequence diagram.
+  run(['-ss', '14.6', '-t', '15.2', '-vf', gif, `${MEDIA}/promo.gif`]);
   run(['-ss', '5', '-frames:v', '1', '-vf', 'scale=1280:-1', `${MEDIA}/promo-poster.png`]);
 }
 

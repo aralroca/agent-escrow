@@ -13,7 +13,7 @@ const BASE_CSS = `
   mark { background: #1976d2; color: #fff; padding: 0 .16em .04em; border-radius: .16em; display: inline-block; transform: rotate(-1.5deg); }
 `;
 
-function page(body: string, css = ''): string {
+export function page(body: string, css = ''): string {
   return `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${FONTS}"><style>${BASE_CSS}${css}</style></head><body>${body}</body></html>`;
 }
 
@@ -59,42 +59,5 @@ export function outroCard(): string {
       <p class="small rise" style="animation-delay:.9s">Open source · USDC on Solana devnet · Not audited</p>
     </div>`,
     CENTER_CSS,
-  );
-}
-
-const TERMINAL_CSS = `
-  body { padding: 64px 72px; display: flex; flex-direction: column; gap: 36px; }
-  header { display: flex; justify-content: space-between; align-items: baseline; }
-  h2 { font-size: 52px; letter-spacing: -.035em; font-weight: 600; }
-  header span { font-size: 24px; color: #9aa0ab; }
-  .panes { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; min-height: 0; }
-  .pane { background: #2c2c2c; border: 1px solid #3a3a3a; border-radius: 28px; padding: 32px; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  .who { display: flex; align-items: center; gap: 14px; font-size: 26px; font-weight: 600; padding-bottom: 12px; border-bottom: 1px solid #3a3a3a; }
-  .dot { width: 14px; height: 14px; border-radius: 7px; background: #90caf9; }
-  .seller .dot { background: #9be3bf; }
-  .line { font-family: "Geist Mono", monospace; font-size: 27px; line-height: 1.5; opacity: 0; transform: translateY(8px); animation: rise .35s ease forwards; white-space: pre-wrap; overflow-wrap: anywhere; }
-  .call { color: #90caf9; }
-  .ok { color: #9be3bf; }
-  .bad { color: #ff9c94; }
-  .dim { color: #9aa0ab; }
-`;
-
-/** Two panes that the recorder fills with the real MCP tool calls as they happen. */
-export function terminalCard(title: string): string {
-  return page(
-    `<header><h2 class="rise">${title}</h2><span class="rise">Every line is a real MCP tool call</span></header>
-    <div class="panes">
-      <section class="pane buyer"><div class="who"><i class="dot"></i>Buyer agent</div><div id="buyer"></div></section>
-      <section class="pane seller"><div class="who"><i class="dot"></i>Seller agent</div><div id="seller"></div></section>
-    </div>
-    <script>
-      window.addLine = (side, kind, text) => {
-        const line = document.createElement('div');
-        line.className = 'line ' + kind;
-        line.textContent = text;
-        document.getElementById(side).append(line);
-      };
-    </script>`,
-    TERMINAL_CSS,
   );
 }

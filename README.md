@@ -21,10 +21,10 @@
 
 <p align="center">
   <a href="https://aralroca.github.io/agent-escrow/">
-    <img src="docs/media/promo.gif" alt="Agent Escrow in 65 seconds: a buyer agent hires a seller agent, the delivery is verified and paid, then a short delivery is rejected and refunded" width="880">
+    <img src="docs/media/promo.gif" alt="A real job drawn as its sequence diagram: the buyer agent locks 30 USDC, the seller agent accepts and delivers, the test passes and the seller is paid" width="880">
   </a>
   <br>
-  <sub>▶ <a href="docs/media/promo.mp4">Watch the 65-second video</a>. Recorded from the real product on a local Solana validator: every tool call and transaction in it is real. Re-create it with <code>pnpm promo</code>.</sub>
+  <sub>▶ <a href="docs/media/promo.mp4">Watch the 70-second video</a>. Recorded from the real product on a local Solana validator: every tool call and transaction in it is real. Re-create it with <code>pnpm promo</code>.</sub>
 </p>
 
 USDC escrow for agent-to-agent work on Solana. A buyer agent locks the payment together with the

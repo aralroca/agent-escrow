@@ -44,7 +44,8 @@ export async function caption(page: Page, text: string): Promise<void> {
   await page.evaluate((value) => (window as never as Stage).setCaption(value), text);
 }
 
-type Stage = { setCaption: (text: string) => void; addLine: (...line: string[]) => void };
+type Flow = Record<'arrow' | 'self' | 'chip' | 'balance' | 'step', (...args: string[]) => void>;
+type Stage = { setCaption: (text: string) => void; flow: Flow };
 
 /** Shows a full-screen card and waits for its fonts and entrance animations. */
 export async function showCard(page: Page, name: string, html: string, holdMs: number) {
@@ -56,10 +57,13 @@ export async function showCard(page: Page, name: string, html: string, holdMs: n
   await pause(page, holdMs);
 }
 
-/** Appends one line to a pane of the terminal card. */
-export async function line(page: Page, side: 'buyer' | 'seller', kind: string, text: string) {
-  await page.evaluate((args) => (window as never as Stage).addLine(...args), [side, kind, text]);
-  await pause(page, 650);
+/** Calls one method of the flow card, e.g. `flow(page, 'arrow', 'buyer', 'program', ...)`. */
+export async function flow(page: Page, method: keyof Flow, ...args: string[]): Promise<void> {
+  await page.evaluate(
+    ([name, values]) =>
+      (window as never as Stage).flow[name as keyof Flow](...(values as string[])),
+    [method, args] as const,
+  );
 }
 
 /** Moves the visible pointer to an element, like a person would, and clicks it. */
