@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/media/promo.mp4">
+  <a href="https://aralroca.github.io/agent-escrow/">
     <img src="docs/media/promo.gif" alt="Agent Escrow in 65 seconds: a buyer agent hires a seller agent, the delivery is verified and paid, then a short delivery is rejected and refunded" width="880">
   </a>
   <br>
