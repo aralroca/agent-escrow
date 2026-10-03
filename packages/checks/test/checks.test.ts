@@ -159,6 +159,23 @@ describe('evaluate', () => {
     expect(evaluation.passed).toBe(false);
   });
 
+  it('only downloads over http(s)', async () => {
+    const commitment = await commit(products);
+
+    await expect(evaluate({ ...commitment, specUri: 'file:///etc/passwd' })).rejects.toThrow(
+      'Only http(s) URLs',
+    );
+  });
+
+  it('refuses deliverables above the size cap', async () => {
+    const commitment = await commit(products);
+
+    files.set('https://x/huge', new Uint8Array(5 * 1024 * 1024 + 1));
+    const evaluation = await evaluate({ ...commitment, resultUri: 'https://x/huge' });
+
+    expect(evaluation.results[0].detail).toContain('is larger than');
+  });
+
   it('throws when the spec does not match its committed hash', async () => {
     const commitment = await commit(products);
 

@@ -40,7 +40,6 @@ to buy, devnet USDC ([faucet.circle.com](https://faucet.circle.com)).
 | `MAX_JOB_USDC` | `50` | Hard cap per job. The server refuses to sign a larger escrow, whatever the agent is told. |
 | `SOLANA_RPC_URL` | `https://api.devnet.solana.com` | RPC endpoint. |
 | `GITHUB_TOKEN` | none | Lets the server publish inline specs and deliverables as public gists. Without it, pass URLs. |
-| `AGENT_ESCROW_MINT` | devnet USDC | Token mint used for new jobs. |
 
 ## Tools
 

@@ -2,9 +2,9 @@ mod common;
 
 use {
     agent_escrow::{error::ErrorCode, instruction, CreateJobArgs, JobStatus},
-    anchor_lang::{error::ErrorCode as AnchorError, prelude::Pubkey},
+    anchor_lang::error::ErrorCode as AnchorError,
     common::*,
-    litesvm_token::{CreateAssociatedTokenAccount, CreateMint},
+    litesvm_token::{CreateAssociatedTokenAccount, CreateMint, MintTo},
     solana_signer::Signer,
 };
 
@@ -208,14 +208,43 @@ fn the_parties_passed_to_a_settlement_must_be_the_jobs_own() {
 // --- Wrong mint -------------------------------------------------------------
 
 #[test]
-fn a_job_only_moves_the_mint_it_was_funded_with() {
+fn jobs_can_only_be_paid_in_usdc() {
     let mut env = Env::new();
-    let (client, evaluator) = (env.client.insecure_clone(), env.evaluator.insecure_clone());
+    let client = env.client.insecure_clone();
     let other_mint = CreateMint::new(&mut env.svm, &client)
         .decimals(6)
         .send()
         .unwrap();
     let other_token = CreateAssociatedTokenAccount::new(&mut env.svm, &client, &other_mint)
+        .send()
+        .unwrap();
+    let create = agent_escrow::accounts::CreateJob {
+        client: client.pubkey(),
+        job: env.job(1),
+        mint: other_mint,
+        client_token: other_token,
+        vault: env.vault(1),
+        token_program: anchor_spl::token::ID,
+        system_program: anchor_lang::solana_program::system_program::ID,
+    };
+    let args = env.job_args(1, AMOUNT);
+
+    MintTo::new(&mut env.svm, &client, &other_mint, &other_token, 100 * USDC)
+        .send()
+        .unwrap();
+    assert_code(
+        env.send(instruction::CreateJob { args }, create, &client),
+        ErrorCode::UnsupportedMint,
+    );
+    assert!(!env.exists(&env.job(1)));
+}
+
+#[test]
+fn a_job_cannot_be_settled_with_another_mint() {
+    let mut env = Env::new();
+    let (client, evaluator) = (env.client.insecure_clone(), env.evaluator.insecure_clone());
+    let other_mint = CreateMint::new(&mut env.svm, &client)
+        .decimals(6)
         .send()
         .unwrap();
     let mut release = {
@@ -228,26 +257,6 @@ fn a_job_only_moves_the_mint_it_was_funded_with() {
         .send(instruction::Complete {}, release, &evaluator)
         .is_err());
     assert_eq!(env.balance(&env.vault(1)), AMOUNT);
-
-    let mut create = agent_escrow::accounts::CreateJob {
-        client: client.pubkey(),
-        job: env.job(2),
-        mint: env.mint,
-        client_token: other_token,
-        vault: env.vault(2),
-        token_program: anchor_spl::token::ID,
-        system_program: anchor_lang::solana_program::system_program::ID,
-    };
-    let args = env.job_args(2, AMOUNT);
-    assert_code(
-        env.send(instruction::CreateJob { args }, create.clone(), &client),
-        AnchorError::ConstraintTokenMint,
-    );
-    create.mint = Pubkey::new_unique();
-    let args = env.job_args(2, AMOUNT);
-    assert!(env
-        .send(instruction::CreateJob { args }, create, &client)
-        .is_err());
 }
 
 // --- Timing -----------------------------------------------------------------

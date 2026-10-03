@@ -1,24 +1,15 @@
 import { Client, InMemoryTransport } from '@modelcontextprotocol/client';
-import type { Address, KeyPairSigner } from '@solana/kit';
+import type { KeyPairSigner } from '@solana/kit';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Context } from '../packages/mcp/src/context.ts';
 import { createServer, TOOLS } from '../packages/mcp/src/server.ts';
 import { products, spec } from './fixtures.ts';
-import {
-  balanceOf,
-  connection,
-  createMint,
-  fundedSigner,
-  mintTo,
-  serveFiles,
-  USDC,
-} from './world.ts';
+import { balanceOf, connection, fundedSigner, mintUsdc, serveFiles, USDC } from './world.ts';
 
 // biome-ignore lint/suspicious/noExplicitAny: tool replies are arbitrary JSON
 type Reply = { ok: boolean; data: any };
 
 let files: Awaited<ReturnType<typeof serveFiles>>;
-let mint: Address;
 let buyerKey: KeyPairSigner;
 let sellerKey: KeyPairSigner;
 let buyer: Client;
@@ -29,7 +20,7 @@ let published = 0;
 async function agent(signer: KeyPairSigner): Promise<Client> {
   const publish = async (name: string, content: unknown) =>
     files.host(`${published++}-${name}`, content);
-  const context: Context = { connection, signer, mint, maxJobAmount: 50n * USDC, publish };
+  const context: Context = { connection, signer, maxJobAmount: 50n * USDC, publish };
   const [clientEnd, serverEnd] = InMemoryTransport.createLinkedPair();
   const client = new Client({ name: 'test-agent', version: '1.0.0' });
 
@@ -64,9 +55,8 @@ async function deliveredJob(result: unknown): Promise<string> {
 
 beforeAll(async () => {
   [buyerKey, sellerKey] = await Promise.all([fundedSigner(), fundedSigner()]);
-  mint = await createMint(buyerKey);
   files = await serveFiles();
-  await mintTo(buyerKey, mint, buyerKey.address, 1_000n * USDC);
+  await mintUsdc(buyerKey.address, 1_000n * USDC);
   [buyer, seller] = await Promise.all([agent(buyerKey), agent(sellerKey)]);
   await call(seller, 'register_agent', { name: 'lingua-mcp', capabilities: ['translation'] });
 });
@@ -115,11 +105,11 @@ describe('two agents trading through MCP', () => {
     expect([accepted.ok, submitted.ok]).toEqual([true, true]);
     expect(verdict.data).toMatchObject({ action: 'completed', passed: true });
     expect(job.data).toMatchObject({ status: 'Completed', amount: '30', fee: '0.075' });
-    expect(await balanceOf(sellerKey.address, mint)).toBe(29_925_000n);
+    expect(await balanceOf(sellerKey.address)).toBe(29_925_000n);
   });
 
   it('refunds the buyer when the delivery fails the acceptance spec', async () => {
-    const before = await balanceOf(buyerKey.address, mint);
+    const before = await balanceOf(buyerKey.address);
     const job = await deliveredJob(products.slice(0, 2));
     const verdict = await call(buyer, 'evaluate_job', { job });
 
@@ -129,7 +119,7 @@ describe('two agents trading through MCP', () => {
       passed: false,
       detail: '2 / 3 items',
     });
-    expect(await balanceOf(buyerKey.address, mint)).toBe(before);
+    expect(await balanceOf(buyerKey.address)).toBe(before);
   });
 
   it('updates the seller reputation from settled jobs only', async () => {
@@ -163,11 +153,11 @@ describe('guards', () => {
     ['no spec at all', { spec: undefined }],
     ['a spec with no checks', { spec: { version: 1, title: 'empty', checks: [] } }],
   ])('rejects create_job with %s without moving funds', async (_name, overrides) => {
-    const before = await balanceOf(buyerKey.address, mint);
+    const before = await balanceOf(buyerKey.address);
     const reply = await hire(overrides);
 
     expect(reply.ok).toBe(false);
-    expect(await balanceOf(buyerKey.address, mint)).toBe(before);
+    expect(await balanceOf(buyerKey.address)).toBe(before);
   });
 
   it('rejects calls on jobs that do not exist or from the wrong party', async () => {
@@ -177,6 +167,25 @@ describe('guards', () => {
 
     expect(missing.data).toContain('No job found');
     expect(wrongParty.ok).toBe(false);
+  });
+
+  it('refuses to accept a job whose spec no longer matches its committed hash', async () => {
+    const specUri = files.host('swapped-spec.json', spec);
+    const { data } = await hire({ spec: undefined, spec_uri: specUri });
+
+    files.host('swapped-spec.json', { ...spec, title: 'A different bar' });
+    const accepted = await call(seller, 'accept_job', { job: data.job });
+    const job = await call(seller, 'get_job', { job: data.job });
+
+    expect(accepted.data).toContain('does not match the hash committed on-chain');
+    expect(job.data.status).toBe('Funded');
+  });
+
+  it('hands the seller the spec it commits to', async () => {
+    const { data } = await hire();
+    const accepted = await call(seller, 'accept_job', { job: data.job });
+
+    expect(accepted.data.spec).toMatchObject({ title: spec.title });
   });
 
   it('refuses a second verdict on a settled job', async () => {
@@ -191,12 +200,12 @@ describe('guards', () => {
 
 describe('timed exits', () => {
   it('lets the buyer take the money back when nobody accepted', async () => {
-    const before = await balanceOf(buyerKey.address, mint);
+    const before = await balanceOf(buyerKey.address);
     const { data } = await hire();
     const settled = await call(buyer, 'settle_expired', { job: data.job });
 
     expect(settled.data.outcome).toBe('refunded to the client');
-    expect(await balanceOf(buyerKey.address, mint)).toBe(before);
+    expect(await balanceOf(buyerKey.address)).toBe(before);
   });
 
   it('does not let either side exit early', async () => {

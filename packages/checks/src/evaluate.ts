@@ -20,13 +20,29 @@ export async function runChecks(spec: Spec, bytes: Uint8Array): Promise<Verdict>
   return { passed: results.every((result) => result.passed), results };
 }
 
-/** Downloads a file and refuses it unless its sha256 equals the committed hash. */
-export async function fetchVerified(uri: string, expectedHash: string): Promise<Uint8Array> {
-  const response = await fetch(uri);
+const FETCH_TIMEOUT_MS = 30_000;
+const MAX_BYTES = 5 * 1024 * 1024;
+
+/**
+ * Downloads a file chosen by a counterparty. Only http(s), bounded in time and size, so a hostile
+ * URL cannot hang or exhaust whoever runs the acceptance test.
+ */
+export async function fetchBytes(uri: string): Promise<Uint8Array> {
+  if (!/^https?:\/\//i.test(uri)) throw new Error(`Only http(s) URLs are supported: ${uri}`);
+  const response = await fetch(uri, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
   const bytes = new Uint8Array(await response.arrayBuffer());
-  const actualHash = await sha256Hex(bytes);
 
   if (!response.ok) throw new Error(`Could not fetch ${uri}: HTTP ${response.status}`);
+  if (bytes.length > MAX_BYTES) throw new Error(`${uri} is larger than ${MAX_BYTES} bytes`);
+
+  return bytes;
+}
+
+/** Downloads a file and refuses it unless its sha256 equals the committed hash. */
+export async function fetchVerified(uri: string, expectedHash: string): Promise<Uint8Array> {
+  const bytes = await fetchBytes(uri);
+  const actualHash = await sha256Hex(bytes);
+
   if (actualHash !== expectedHash.toLowerCase()) {
     throw new Error(`Content at ${uri} does not match the committed hash`);
   }

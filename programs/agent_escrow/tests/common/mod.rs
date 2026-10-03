@@ -2,7 +2,7 @@
 
 use {
     agent_escrow::{
-        accounts, instruction, AgentProfile, CreateJobArgs, Job, AGENT_SEED, JOB_SEED, TREASURY,
+        accounts, instruction, AgentProfile, CreateJobArgs, Job, AGENT_SEED, JOB_SEED, TREASURY, USDC_MINT,
         VAULT_SEED,
     },
     anchor_lang::{
@@ -13,9 +13,13 @@ use {
     anchor_spl::{associated_token, token},
     litesvm::{types::FailedTransactionMetadata, LiteSVM},
     litesvm_token::{
-        spl_token::state::Account as TokenAccount, CreateAssociatedTokenAccount, CreateMint, MintTo,
+        spl_token::state::{Account as TokenAccount, Mint},
+        CreateAssociatedTokenAccount, MintTo,
     },
+    solana_account::Account,
     solana_keypair::Keypair,
+    solana_program_option::COption,
+    solana_program_pack::Pack,
     solana_signer::Signer,
     solana_transaction::Transaction,
 };
@@ -28,6 +32,30 @@ pub const DEADLINE: i64 = START + 3_600;
 pub const REVIEW_WINDOW: i64 = 600;
 pub const SPEC_HASH: [u8; 32] = [7; 32];
 pub const RESULT_HASH: [u8; 32] = [9; 32];
+
+/// Puts a USDC mint, controlled by `authority`, at the address the program expects.
+fn install_usdc(svm: &mut LiteSVM, authority: &Pubkey) -> Pubkey {
+    let mut data = vec![0; Mint::LEN];
+    let mint = Mint {
+        mint_authority: COption::Some(*authority),
+        supply: 0,
+        decimals: 6,
+        is_initialized: true,
+        freeze_authority: COption::None,
+    };
+
+    Mint::pack(mint, &mut data).unwrap();
+    let account = Account {
+        lamports: 1_000_000_000,
+        data,
+        owner: token::ID,
+        executable: false,
+        rent_epoch: 0,
+    };
+    svm.set_account(USDC_MINT, account).unwrap();
+
+    USDC_MINT
+}
 
 /// A funded world: one client, one registered provider, one evaluator and an outsider.
 pub struct Env {
@@ -55,10 +83,7 @@ impl Env {
         for key in [&client, &provider, &evaluator, &stranger] {
             svm.airdrop(&key.pubkey(), 10_000_000_000).unwrap();
         }
-        let mint = CreateMint::new(&mut svm, &client)
-            .decimals(6)
-            .send()
-            .unwrap();
+        let mint = install_usdc(&mut svm, &client.pubkey());
         let [client_token, provider_token, stranger_token] =
             [&client, &provider, &stranger].map(|owner| {
                 CreateAssociatedTokenAccount::new(&mut svm, owner, &mint)

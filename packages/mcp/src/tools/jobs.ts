@@ -113,7 +113,6 @@ export const createJobTool = defineTool({
       specUri,
       deadline,
       reviewWindow,
-      mint: context.mint,
     };
 
     return createJob(context.connection, context.signer, input);

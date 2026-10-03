@@ -29,7 +29,9 @@ litesvm-token = "0.16.0"
 solana-transaction = "4.1"
 solana-signer = "3.0.0"
 solana-keypair = "3.0.1"
-solana-clock = "3.0.0"
+solana-account = "4"
+solana-program-option = "3"
+solana-program-pack = "3"
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }

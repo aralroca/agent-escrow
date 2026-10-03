@@ -6,6 +6,7 @@ import {
   getAgent,
   listAgents,
   registerAgent,
+  USDC_DEVNET_MINT,
 } from '@agent-escrow/sdk';
 import { fetchMaybeToken } from '@solana-program/token';
 import * as z from 'zod/v4';
@@ -33,10 +34,10 @@ export function meetsPolicy(agent: AgentView, policy: Policy): boolean {
   );
 }
 
-async function tokenBalance({ connection, signer, mint }: Context): Promise<string> {
+async function tokenBalance({ connection, signer }: Context): Promise<string> {
   const account = await fetchMaybeToken(
     connection.rpc,
-    await findTokenAccount(signer.address, mint),
+    await findTokenAccount(signer.address, USDC_DEVNET_MINT),
   );
 
   return formatAmount(account.exists ? account.data.amount : 0n);

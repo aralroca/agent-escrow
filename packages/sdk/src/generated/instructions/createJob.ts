@@ -67,7 +67,8 @@ export type CreateJobInstruction<
   TProgram extends string = typeof AGENT_ESCROW_PROGRAM_ADDRESS,
   TAccountClient extends string | AccountMeta<string> = string,
   TAccountJob extends string | AccountMeta<string> = string,
-  TAccountMint extends string | AccountMeta<string> = string,
+  TAccountMint extends string | AccountMeta<string> =
+    "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
   TAccountClientToken extends string | AccountMeta<string> = string,
   TAccountVault extends string | AccountMeta<string> = string,
   TAccountTokenProgram extends string | AccountMeta<string> =
@@ -180,7 +181,7 @@ export type CreateJobAsyncInput<
 > = {
   client: TAccountClient;
   job: TAccountJob;
-  mint: TAccountMint;
+  mint?: TAccountMint;
   clientToken: TAccountClientToken;
   vault?: TAccountVault;
   tokenProgram?: TAccountTokenProgram;
@@ -285,6 +286,10 @@ export async function getCreateJobInstructionAsync<
   const args = { ...input };
 
   // Resolve default values.
+  if (!accounts.mint.value) {
+    accounts.mint.value =
+      "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU" as Address<"4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU">;
+  }
   if (!accounts.vault.value) {
     accounts.vault.value = await findVaultPda(
       {
@@ -365,7 +370,7 @@ export type CreateJobInput<
 > = {
   client: TAccountClient;
   job: TAccountJob;
-  mint: TAccountMint;
+  mint?: TAccountMint;
   clientToken: TAccountClientToken;
   vault: TAccountVault;
   tokenProgram?: TAccountTokenProgram;
@@ -468,6 +473,10 @@ export function getCreateJobInstruction<
   const args = { ...input };
 
   // Resolve default values.
+  if (!accounts.mint.value) {
+    accounts.mint.value =
+      "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU" as Address<"4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU">;
+  }
   if (!accounts.tokenProgram.value) {
     accounts.tokenProgram.value =
       "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" as Address<"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA">;

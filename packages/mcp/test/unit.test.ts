@@ -72,11 +72,10 @@ describe('contextFromEnv', () => {
 
   writeFileSync(keypair, JSON.stringify(bytes));
 
-  it('defaults to devnet USDC and a 50 USDC cap', async () => {
+  it('defaults to a 50 USDC cap', async () => {
     const context = await contextFromEnv({ AGENT_ESCROW_KEYPAIR: keypair });
 
     expect(context.maxJobAmount).toBe(50_000_000n);
-    expect(context.mint).toBe('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU');
     expect(context.signer.address).toBe('24PNhTaNtomHhoy3fTRaMhAFCRj4uHqhZEEoWrKDbR5p');
   });
 

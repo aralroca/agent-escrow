@@ -32,6 +32,7 @@ pub struct CreateJob<'info> {
         bump,
     )]
     pub job: Account<'info, Job>,
+    #[account(address = USDC_MINT @ ErrorCode::UnsupportedMint)]
     pub mint: InterfaceAccount<'info, Mint>,
     #[account(
         mut,
@@ -91,13 +92,6 @@ pub fn handle_create_job(ctx: Context<CreateJob>, args: CreateJobArgs) -> Result
         args.amount,
         ctx.accounts.mint.decimals,
     )?;
-    // Mints that charge on transfer would leave the vault short and the job unpayable.
-    ctx.accounts.vault.reload()?;
-    require!(
-        ctx.accounts.vault.amount == args.amount,
-        ErrorCode::VaultMismatch
-    );
-
     ctx.accounts.job.set_inner(Job {
         client: ctx.accounts.client.key(),
         provider: args.provider,

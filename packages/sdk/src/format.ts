@@ -62,14 +62,13 @@ function timeline(job: JobRecord) {
 
 /** A JSON-friendly view of a job: no bigints, hashes as hex, status as a word. */
 export function describeJob(job: JobRecord) {
-  const { address, client, provider, evaluator, mint } = job;
+  const { address, client, provider, evaluator } = job;
   const money = { amount: formatAmount(job.amount), fee: formatAmount(protocolFee(job.amount)) };
-  const parties = { client, provider, evaluator, mint };
 
   return {
     address,
-    status: JobStatus[job.status],
-    ...parties,
+    status: JobStatus[job.status] as keyof typeof JobStatus,
+    ...{ client, provider, evaluator },
     ...money,
     ...commitments(job),
     ...timeline(job),

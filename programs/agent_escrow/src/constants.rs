@@ -23,5 +23,9 @@ pub const MAX_NAME_LEN: usize = 32;
 pub const MAX_CAPABILITIES_LEN: usize = 128;
 pub const MAX_URI_LEN: usize = 200;
 
+/// The only token jobs can be paid in: Circle's USDC on devnet. Accepting any mint would let two
+/// colluding wallets build a track record for free with a worthless token.
+pub const USDC_MINT: Pubkey = pubkey!("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
+
 /// Wallet that owns the token accounts receiving protocol fees.
 pub const TREASURY: Pubkey = pubkey!("2goJXc872qgfEEcMC4szM3HAf5u3cUHsR7mdULAfQPHm");

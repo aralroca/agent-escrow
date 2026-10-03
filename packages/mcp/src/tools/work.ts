@@ -1,3 +1,4 @@
+import { fetchVerified, parseSpec, type Spec, toHex } from '@agent-escrow/checks';
 import {
   acceptJob,
   claimTimeout,
@@ -13,14 +14,30 @@ import * as z from 'zod/v4';
 import type { Context } from '../context.ts';
 import { defineTool, jobSchema } from '../tool.ts';
 
+/** The spec a seller is about to commit to, refused unless it matches the on-chain hash. */
+async function committedSpec(job: JobRecord): Promise<Spec> {
+  const bytes = await fetchVerified(job.specUri, toHex(job.specHash as Uint8Array)).catch(() => {
+    throw new Error(
+      `Refused: the spec at ${job.specUri} is unreachable or does not match the hash committed ` +
+        'on-chain, so no delivery could ever pass. Do not accept this job.',
+    );
+  });
+
+  return parseSpec(bytes);
+}
+
 export const acceptJobTool = defineTool({
   name: 'accept_job',
   description:
-    'As the seller, commit to a funded job. Read its spec first (get_job gives the spec URI): ' +
-    'you are paid only if your delivery passes it. Missing the deadline is recorded on your profile.',
+    'As the seller, commit to a funded job. The server first checks that the acceptance spec is ' +
+    'reachable and matches its on-chain hash, and returns it: you are paid only if your delivery ' +
+    'passes every check. Missing the deadline is recorded on your profile.',
   input: z.object({ job: jobSchema }),
   async run({ connection, signer }, { job }) {
-    return acceptJob(connection, signer, job);
+    const spec = await committedSpec(await getJob(connection.rpc, job));
+    const receipt = await acceptJob(connection, signer, job);
+
+    return { ...receipt, spec };
   },
 });
 

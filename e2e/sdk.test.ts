@@ -21,15 +21,7 @@ import {
 import type { Address, KeyPairSigner } from '@solana/kit';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { products, spec } from './fixtures.ts';
-import {
-  balanceOf,
-  connection,
-  createMint,
-  fundedSigner,
-  mintTo,
-  serveFiles,
-  USDC,
-} from './world.ts';
+import { balanceOf, connection, fundedSigner, mintUsdc, serveFiles, USDC } from './world.ts';
 
 const AMOUNT = 30n * USDC;
 const inOneHour = () => BigInt(Math.floor(Date.now() / 1000) + 3_600);
@@ -37,7 +29,6 @@ const inOneHour = () => BigInt(Math.floor(Date.now() / 1000) + 3_600);
 let client: KeyPairSigner;
 let provider: KeyPairSigner;
 let evaluator: KeyPairSigner;
-let mint: Address;
 let files: Awaited<ReturnType<typeof serveFiles>>;
 let specUri: string;
 
@@ -47,10 +38,9 @@ beforeAll(async () => {
     fundedSigner(),
     fundedSigner(),
   ]);
-  mint = await createMint(client);
   files = await serveFiles();
   specUri = files.host('spec.json', spec);
-  await mintTo(client, mint, client.address, 1_000n * USDC);
+  await mintUsdc(client.address, 1_000n * USDC);
   await registerAgent(connection, provider, { name: 'lingua-7', capabilities: ['translation'] });
 }, 60_000);
 
@@ -64,7 +54,7 @@ function newJob() {
     specUri,
   };
 
-  return createJob(connection, client, { ...input, deadline: inOneHour(), mint });
+  return createJob(connection, client, { ...input, deadline: inOneHour() });
 }
 
 async function submittedJob(name: string, result: unknown): Promise<Address> {
@@ -78,7 +68,7 @@ async function submittedJob(name: string, result: unknown): Promise<Address> {
 
 describe('job lifecycle through the SDK', () => {
   it('pays the provider when the deliverable passes the committed test', async () => {
-    const before = await balanceOf(provider.address, mint);
+    const before = await balanceOf(provider.address);
     const job = await submittedJob('good.json', products);
     const judgement = await evaluateJob(connection, evaluator, job);
     const settled = await getJob(connection.rpc, job);
@@ -86,11 +76,11 @@ describe('job lifecycle through the SDK', () => {
     expect(judgement.action).toBe('completed');
     expect(judgement.verdict.results.every((result) => result.passed)).toBe(true);
     expect(settled.status).toBe(JobStatus.Completed);
-    expect((await balanceOf(provider.address, mint)) - before).toBe(AMOUNT - 75_000n);
+    expect((await balanceOf(provider.address)) - before).toBe(AMOUNT - 75_000n);
   });
 
   it('refunds the client when the deliverable fails the committed test', async () => {
-    const before = await balanceOf(client.address, mint);
+    const before = await balanceOf(client.address);
     const job = await submittedJob('short.json', products.slice(0, 2));
     const judgement = await evaluateJob(connection, evaluator, job);
     const settled = await getJob(connection.rpc, job);
@@ -98,7 +88,7 @@ describe('job lifecycle through the SDK', () => {
     expect(judgement.action).toBe('rejected');
     expect(judgement.verdict.results.find((result) => result.type === 'count')?.passed).toBe(false);
     expect(settled.status).toBe(JobStatus.Rejected);
-    expect(await balanceOf(client.address, mint)).toBe(before);
+    expect(await balanceOf(client.address)).toBe(before);
   });
 
   it('lists the transactions of a job, labelled by instruction', async () => {
@@ -123,19 +113,19 @@ describe('job lifecycle through the SDK', () => {
   });
 
   it('lets the client cancel a job nobody accepted', async () => {
-    const before = await balanceOf(client.address, mint);
+    const before = await balanceOf(client.address);
     const { job } = await newJob();
 
     await refundJob(connection, client, job);
 
     expect((await getJob(connection.rpc, job)).status).toBe(JobStatus.Refunded);
-    expect(await balanceOf(client.address, mint)).toBe(before);
+    expect(await balanceOf(client.address)).toBe(before);
   });
 });
 
 describe('guards', () => {
   it('refuses to create a job whose spec is not a valid acceptance spec', async () => {
-    const input = { provider: provider.address, amount: AMOUNT, deadline: inOneHour(), mint };
+    const input = { provider: provider.address, amount: AMOUNT, deadline: inOneHour() };
     const badSpec = files.host('bad-spec.json', { hello: 'world' });
 
     await expect(createJob(connection, client, { ...input, specUri: badSpec })).rejects.toThrow(
@@ -173,10 +163,10 @@ describe('reading the chain', () => {
     expect(describeAgent(agent as NonNullable<typeof agent>)).toMatchObject({
       name: 'lingua-7',
       capabilities: ['translation'],
-      jobsCompleted: 1,
+      jobsCompleted: 2,
       jobsRejected: 1,
-      volumeSettled: '30',
-      successRate: 0.5,
+      volumeSettled: '60',
+      successRate: 2 / 3,
     });
     expect((await listAgents(connection.rpc)).map((row) => row.name)).toContain('lingua-7');
   });

@@ -22,8 +22,8 @@ pub enum ErrorCode {
     DeadlineNotReached,
     #[msg("The review window is still open")]
     ReviewWindowOpen,
-    #[msg("The vault did not receive the full amount")]
-    VaultMismatch,
+    #[msg("Jobs can only be paid in USDC")]
+    UnsupportedMint,
     #[msg("The provider profile account is required")]
     MissingProfile,
     #[msg("Arithmetic overflow")]

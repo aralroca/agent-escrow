@@ -34,8 +34,8 @@ export const AGENT_ESCROW_ERROR__DEADLINE_PASSED = 0x1777; // 6007
 export const AGENT_ESCROW_ERROR__DEADLINE_NOT_REACHED = 0x1778; // 6008
 /** ReviewWindowOpen: The review window is still open */
 export const AGENT_ESCROW_ERROR__REVIEW_WINDOW_OPEN = 0x1779; // 6009
-/** VaultMismatch: The vault did not receive the full amount */
-export const AGENT_ESCROW_ERROR__VAULT_MISMATCH = 0x177a; // 6010
+/** UnsupportedMint: Jobs can only be paid in USDC */
+export const AGENT_ESCROW_ERROR__UNSUPPORTED_MINT = 0x177a; // 6010
 /** MissingProfile: The provider profile account is required */
 export const AGENT_ESCROW_ERROR__MISSING_PROFILE = 0x177b; // 6011
 /** Overflow: Arithmetic overflow */
@@ -54,7 +54,7 @@ export type AgentEscrowError =
   | typeof AGENT_ESCROW_ERROR__OVERFLOW
   | typeof AGENT_ESCROW_ERROR__REVIEW_WINDOW_OPEN
   | typeof AGENT_ESCROW_ERROR__UNAUTHORIZED
-  | typeof AGENT_ESCROW_ERROR__VAULT_MISMATCH;
+  | typeof AGENT_ESCROW_ERROR__UNSUPPORTED_MINT;
 
 let agentEscrowErrorMessages: Record<AgentEscrowError, string> | undefined;
 if (process.env["NODE_ENV"] !== "production") {
@@ -71,7 +71,7 @@ if (process.env["NODE_ENV"] !== "production") {
     [AGENT_ESCROW_ERROR__OVERFLOW]: `Arithmetic overflow`,
     [AGENT_ESCROW_ERROR__REVIEW_WINDOW_OPEN]: `The review window is still open`,
     [AGENT_ESCROW_ERROR__UNAUTHORIZED]: `The signer is not allowed to perform this action on the job`,
-    [AGENT_ESCROW_ERROR__VAULT_MISMATCH]: `The vault did not receive the full amount`,
+    [AGENT_ESCROW_ERROR__UNSUPPORTED_MINT]: `Jobs can only be paid in USDC`,
   };
 }
 

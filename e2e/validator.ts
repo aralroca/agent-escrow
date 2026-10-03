@@ -5,6 +5,10 @@ import { join } from 'node:path';
 
 const PROGRAM_ID = '98UQvVXX8Zm3AGt9V3uiYYTWYFtDUbvEt6MwK2izLhmd';
 const PROGRAM_PATH = 'target/deploy/agent_escrow.so';
+// The program only accepts USDC, so the local chain gets a USDC mint at the real address,
+// controlled by the test key in world.ts.
+const USDC_MINT = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU';
+const USDC_FIXTURE = 'e2e/usdc-mint.json';
 const RPC_URL = 'http://127.0.0.1:8899';
 const STARTUP_ATTEMPTS = 60;
 const POLL_MS = 500;
@@ -31,15 +35,9 @@ async function waitUntilHealthy(attempt = 0): Promise<void> {
 
 function startValidator(): ChildProcess {
   const ledger = mkdtempSync(join(tmpdir(), 'agent-escrow-ledger-'));
-  const args = [
-    '--reset',
-    '--quiet',
-    '--ledger',
-    ledger,
-    '--bpf-program',
-    PROGRAM_ID,
-    PROGRAM_PATH,
-  ];
+  const program = ['--bpf-program', PROGRAM_ID, PROGRAM_PATH];
+  const usdc = ['--account', USDC_MINT, USDC_FIXTURE];
+  const args = ['--reset', '--quiet', '--ledger', ledger, ...program, ...usdc];
 
   return spawn('solana-test-validator', args, { stdio: 'ignore' });
 }

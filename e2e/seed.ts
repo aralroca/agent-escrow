@@ -1,7 +1,7 @@
 import { acceptJob, createJob, evaluateJob, registerAgent, submitResult } from '@agent-escrow/sdk';
 import type { Address } from '@solana/kit';
 import { products, spec } from './fixtures.ts';
-import { connection, createMint, fundedSigner, mintTo, serveFiles, USDC } from './world.ts';
+import { connection, fundedSigner, mintUsdc, serveFiles, USDC } from './world.ts';
 
 export type Seeded = { completed: Address; rejected: Address; funded: Address; close: () => void };
 
@@ -13,7 +13,6 @@ const inOneHour = () => BigInt(Math.floor(Date.now() / 1000) + 3_600);
  */
 export async function seed(): Promise<Seeded> {
   const [buyer, seller] = await Promise.all([fundedSigner(), fundedSigner()]);
-  const mint = await createMint(buyer);
   const files = await serveFiles();
   const specUri = files.host('spec.json', spec);
   const hire = () =>
@@ -22,7 +21,6 @@ export async function seed(): Promise<Seeded> {
       amount: 30n * USDC,
       specUri,
       deadline: inOneHour(),
-      mint,
     });
   const deliver = async (name: string, result: unknown) => {
     const { job } = await hire();
@@ -34,7 +32,7 @@ export async function seed(): Promise<Seeded> {
     return job;
   };
 
-  await mintTo(buyer, mint, buyer.address, 1_000n * USDC);
+  await mintUsdc(buyer.address, 1_000n * USDC);
   await registerAgent(connection, buyer, { name: 'shop-ops' });
   await registerAgent(connection, seller, { name: 'lingua-7', capabilities: ['translation'] });
 

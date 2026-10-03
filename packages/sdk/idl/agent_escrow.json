@@ -285,7 +285,8 @@
           }
         },
         {
-          "name": "mint"
+          "name": "mint",
+          "address": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
         },
         {
           "name": "client_token",
@@ -598,8 +599,8 @@
     },
     {
       "code": 6010,
-      "name": "VaultMismatch",
-      "msg": "The vault did not receive the full amount"
+      "name": "UnsupportedMint",
+      "msg": "Jobs can only be paid in USDC"
     },
     {
       "code": 6011,

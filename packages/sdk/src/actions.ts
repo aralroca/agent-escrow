@@ -1,4 +1,4 @@
-import { fromHex, parseSpec, sha256Hex } from '@agent-escrow/checks';
+import { fetchBytes, fromHex, parseSpec, sha256Hex } from '@agent-escrow/checks';
 import type { Address, Instruction, Signature, TransactionSigner } from '@solana/kit';
 import { getCreateAssociatedTokenIdempotentInstructionAsync } from '@solana-program/token';
 import { type Connection, sendInstructions } from './connection.ts';
@@ -21,7 +21,7 @@ export type Receipt = { job: Address; signature: Signature };
 export type NewAgent = { name: string; capabilities?: string[]; uri?: string };
 export type NewJob = {
   provider: Address;
-  /** Base units of the mint (USDC has 6 decimals). */
+  /** Base units of USDC, which has 6 decimals. */
   amount: bigint;
   specUri: string;
   /** Unix seconds by which the provider must submit. */
@@ -29,17 +29,8 @@ export type NewJob = {
   /** Who judges the submission. Defaults to the client. */
   evaluator?: Address;
   reviewWindow?: bigint;
-  mint?: Address;
   jobId?: bigint;
 };
-
-async function fetchBytes(uri: string): Promise<Uint8Array> {
-  const response = await fetch(uri);
-
-  if (!response.ok) throw new Error(`Could not fetch ${uri}: HTTP ${response.status}`);
-
-  return new Uint8Array(await response.arrayBuffer());
-}
 
 async function hashOf(bytes: Uint8Array): Promise<Uint8Array> {
   return fromHex(await sha256Hex(bytes));
@@ -76,14 +67,9 @@ export async function registerAgent(
 
 /** Fills what the caller left out. Explicit `undefined` counts as left out. */
 function withDefaults(input: NewJob, client: Address) {
-  const {
-    mint = USDC_DEVNET_MINT,
-    jobId = randomJobId(),
-    evaluator = client,
-    reviewWindow = DEFAULT_REVIEW_WINDOW,
-  } = input;
+  const { jobId = randomJobId(), evaluator = client, reviewWindow = DEFAULT_REVIEW_WINDOW } = input;
 
-  return { ...input, mint, jobId, evaluator, reviewWindow };
+  return { ...input, mint: USDC_DEVNET_MINT, jobId, evaluator, reviewWindow };
 }
 
 /** Commits the acceptance spec by hash and locks the payment, in one transaction. */
@@ -113,11 +99,7 @@ export async function acceptJob(
   job: Address,
 ): Promise<Receipt> {
   const { mint } = await getJob(connection.rpc, job);
-  const createTokenAccount = await getCreateAssociatedTokenIdempotentInstructionAsync({
-    payer: signer,
-    owner: signer.address,
-    mint,
-  });
+  const createTokenAccount = await ensureTokenAccount(signer, signer.address, mint);
   const accept = await getAcceptInstructionAsync({ provider: signer, job });
 
   return send(connection, signer, job, [createTokenAccount, accept]);
@@ -136,20 +118,32 @@ export async function submitResult(
   return send(connection, signer, job, [instruction]);
 }
 
-async function releaseAccounts(connection: Connection, authority: TransactionSigner, job: Address) {
-  const { client, provider, mint } = await getJob(connection.rpc, job);
-  const providerToken = await findTokenAccount(provider, mint);
-
-  return { authority, job, client, provider, mint, providerToken };
+/** An instruction that creates the owner's token account when it is missing. */
+function ensureTokenAccount(payer: TransactionSigner, owner: Address, mint: Address) {
+  return getCreateAssociatedTokenIdempotentInstructionAsync({ payer, owner, mint });
 }
 
-async function returnAccounts(connection: Connection, authority: TransactionSigner, job: Address) {
+/**
+ * Everything a payout to the provider needs. The provider's token account is created when
+ * missing, so closing it cannot be used to block a verdict.
+ */
+async function releasePlan(connection: Connection, authority: TransactionSigner, job: Address) {
+  const { client, provider, mint } = await getJob(connection.rpc, job);
+  const providerToken = await findTokenAccount(provider, mint);
+  const accounts = { authority, job, client, provider, mint, providerToken };
+
+  return { accounts, prepare: await ensureTokenAccount(authority, provider, mint) };
+}
+
+/** Everything a refund to the client needs, creating the client's token account when missing. */
+async function returnPlan(connection: Connection, authority: TransactionSigner, job: Address) {
   const { client, provider, mint, status } = await getJob(connection.rpc, job);
   const clientToken = await findTokenAccount(client, mint);
   // A job nobody accepted has no provider record to update.
   const providerProfile = status === JobStatus.Funded ? undefined : await findAgentPda(provider);
+  const accounts = { authority, job, client, mint, clientToken, providerProfile };
 
-  return { authority, job, client, mint, clientToken, providerProfile };
+  return { accounts, prepare: await ensureTokenAccount(authority, client, mint) };
 }
 
 /** The evaluator approves: the provider is paid, minus the protocol fee. */
@@ -158,9 +152,9 @@ export async function completeJob(
   signer: TransactionSigner,
   job: Address,
 ): Promise<Receipt> {
-  const accounts = await releaseAccounts(connection, signer, job);
+  const { accounts, prepare } = await releasePlan(connection, signer, job);
 
-  return send(connection, signer, job, [await getCompleteInstructionAsync(accounts)]);
+  return send(connection, signer, job, [prepare, await getCompleteInstructionAsync(accounts)]);
 }
 
 /** The provider collects after the review window closed without a verdict. */
@@ -169,9 +163,9 @@ export async function claimTimeout(
   signer: TransactionSigner,
   job: Address,
 ): Promise<Receipt> {
-  const accounts = await releaseAccounts(connection, signer, job);
+  const { accounts, prepare } = await releasePlan(connection, signer, job);
 
-  return send(connection, signer, job, [await getClaimTimeoutInstructionAsync(accounts)]);
+  return send(connection, signer, job, [prepare, await getClaimTimeoutInstructionAsync(accounts)]);
 }
 
 /** The evaluator rejects: the client is refunded in full. */
@@ -180,9 +174,9 @@ export async function rejectJob(
   signer: TransactionSigner,
   job: Address,
 ): Promise<Receipt> {
-  const accounts = await returnAccounts(connection, signer, job);
+  const { accounts, prepare } = await returnPlan(connection, signer, job);
 
-  return send(connection, signer, job, [await getRejectInstructionAsync(accounts)]);
+  return send(connection, signer, job, [prepare, await getRejectInstructionAsync(accounts)]);
 }
 
 /** The client takes the payment back: before acceptance, or after a missed deadline. */
@@ -191,7 +185,7 @@ export async function refundJob(
   signer: TransactionSigner,
   job: Address,
 ): Promise<Receipt> {
-  const accounts = await returnAccounts(connection, signer, job);
+  const { accounts, prepare } = await returnPlan(connection, signer, job);
 
-  return send(connection, signer, job, [await getRefundInstructionAsync(accounts)]);
+  return send(connection, signer, job, [prepare, await getRefundInstructionAsync(accounts)]);
 }
