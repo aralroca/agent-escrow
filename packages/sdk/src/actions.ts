@@ -74,29 +74,34 @@ export async function registerAgent(
   return sendInstructions(connection, signer, [instruction]);
 }
 
+/** Fills what the caller left out. Explicit `undefined` counts as left out. */
+function withDefaults(input: NewJob, client: Address) {
+  const {
+    mint = USDC_DEVNET_MINT,
+    jobId = randomJobId(),
+    evaluator = client,
+    reviewWindow = DEFAULT_REVIEW_WINDOW,
+  } = input;
+
+  return { ...input, mint, jobId, evaluator, reviewWindow };
+}
+
 /** Commits the acceptance spec by hash and locks the payment, in one transaction. */
 export async function createJob(
   connection: Connection,
   signer: TransactionSigner,
   input: NewJob,
 ): Promise<Receipt> {
-  const { mint = USDC_DEVNET_MINT, jobId = randomJobId(), ...rest } = input;
+  const details = withDefaults(input, signer.address);
   const spec = await fetchBytes(input.specUri);
-  const job = await findJobPda(signer.address, jobId);
-  const instruction = await getCreateJobInstructionAsync({
-    evaluator: signer.address,
-    reviewWindow: DEFAULT_REVIEW_WINDOW,
-    ...rest,
-    client: signer,
-    job,
-    jobId,
-    mint,
-    clientToken: await findTokenAccount(signer.address, mint),
-    specHash: await hashOf(spec),
-  });
+  const job = await findJobPda(signer.address, details.jobId);
+  const clientToken = await findTokenAccount(signer.address, details.mint);
+  const specHash = await hashOf(spec);
+  const accounts = { client: signer, job, clientToken };
 
   // A spec nobody can run would make the job impossible to judge, so refuse it up front.
   parseSpec(spec);
+  const instruction = await getCreateJobInstructionAsync({ ...details, ...accounts, specHash });
 
   return send(connection, signer, job, [instruction]);
 }

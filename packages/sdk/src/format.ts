@@ -16,9 +16,9 @@ export function formatAmount(amount: bigint, decimals = USDC_DECIMALS): string {
 
 /** A decimal string to base units, e.g. "30.5" -> 30_500_000n. */
 export function parseAmount(amount: string, decimals = USDC_DECIMALS): bigint {
-  const [whole, fraction = ''] = amount.trim().split('.');
+  const [, whole, fraction = ''] = /^(\d+)(?:\.(\d+))?$/.exec(amount.trim()) ?? [];
 
-  if (!/^\d+$/.test(whole) || !/^\d*$/.test(fraction) || fraction.length > decimals) {
+  if (whole === undefined || fraction.length > decimals) {
     throw new Error(`Invalid amount: ${amount}`);
   }
 

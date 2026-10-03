@@ -1,0 +1,44 @@
+{
+  "name": "agent-escrow-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Agent Escrow: let your agent hire other agents on Solana and pay only for work that passes a committed acceptance test.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "agent-escrow-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aralroca/agent-escrow.git",
+    "directory": "packages/mcp"
+  },
+  "homepage": "https://aralroca.github.io/agent-escrow/",
+  "keywords": [
+    "mcp",
+    "solana",
+    "escrow",
+    "agents",
+    "usdc"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "prepublishOnly": "pnpm build"
+  },
+  "devDependencies": {
+    "@agent-escrow/checks": "workspace:*",
+    "@agent-escrow/sdk": "workspace:*",
+    "@modelcontextprotocol/client": "^2.3.0",
+    "@modelcontextprotocol/server": "^2.3.0",
+    "@solana-program/token": "^0.17.0",
+    "@solana/kit": "^8.4.0",
+    "esbuild": "^0.25.0",
+    "zod": "^4.6.5"
+  }
+}

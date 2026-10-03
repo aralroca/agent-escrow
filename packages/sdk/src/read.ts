@@ -3,6 +3,7 @@ import {
   type Base58EncodedBytes,
   type Base64EncodedBytes,
   type Decoder,
+  fetchEncodedAccount,
   getBase64Decoder,
   getBase64Encoder,
   type ReadonlyUint8Array,
@@ -12,8 +13,8 @@ import {
   AGENT_ESCROW_PROGRAM_ADDRESS,
   AGENT_PROFILE_DISCRIMINATOR,
   type AgentProfile,
+  decodeJob,
   fetchMaybeAgentProfile,
-  fetchMaybeJob,
   getAgentProfileDecoder,
   getJobDecoder,
   JOB_DISCRIMINATOR,
@@ -72,11 +73,12 @@ export async function listJobs(rpc: Rpc, filter: JobFilter = {}): Promise<JobRec
 }
 
 export async function getJob(rpc: Rpc, address: Address): Promise<JobRecord> {
-  const account = await fetchMaybeJob(rpc, address);
+  const account = await fetchEncodedAccount(rpc, address);
+  const isOurs = account.exists && account.programAddress === AGENT_ESCROW_PROGRAM_ADDRESS;
 
-  if (!account.exists) throw new Error(`No job found at ${address}`);
+  if (!isOurs) throw new Error(`No job found at ${address}`);
 
-  return { ...account.data, address };
+  return { ...decodeJob(account).data, address };
 }
 
 /** Every registered agent, most completed jobs first. */
