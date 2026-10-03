@@ -12,6 +12,7 @@ type Method =
   | 'arrow'
   | 'self'
   | 'chip'
+  | 'stamp'
   | 'balance'
   | 'browse'
   | 'lines';

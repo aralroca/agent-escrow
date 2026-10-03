@@ -1,4 +1,6 @@
 // Records the product video. Needs ffmpeg; nothing on screen is mocked.
+//   PIPER_VOICE=voice.onnx adds the voice-over (needs `piper`) and music.
+//   PROMO_MUSIC=file uses that track instead of the synthesized pad.
 //   pnpm promo                          local validator (needs `anchor build` and the Solana CLI)
 //   PROMO_NETWORK=devnet pnpm promo     live program and site on devnet, with the demo wallets
 //                                       (set GITHUB_TOKEN so specs and deliverables can be published)
@@ -11,20 +13,14 @@ import { callPatiently, devnetAgent } from '../../../e2e/devnet-agents.ts';
 import { call, connectAgent } from '../../../e2e/mcp-client.ts';
 import startValidator, { RPC_URL } from '../../../e2e/validator.ts';
 import { fundedSigner, mintUsdc, serveFiles, USDC } from '../../../e2e/world.ts';
-import {
-  type Agents,
-  install,
-  intro,
-  outro,
-  paidJob,
-  rejectedJob,
-  site,
-  verify,
-} from './scenes.ts';
+import { soundtrack } from './audio.ts';
+import { install, intro, outro, site, verify } from './scenes.ts';
 import { openStage } from './stage.ts';
+import { type Agents, paidJob, rejectedJob } from './trade.ts';
+import { prepareVoice, spokenCues, startTrack } from './voice.ts';
 
 type Setup = { agents: Agents; site: string; network: string; proof: string; stop: () => void };
-type Take = { raw: string; diagram: [start: number, end: number] };
+type Take = { raw: string; seconds: number; diagram: [start: number, end: number] };
 
 const SIZE = { width: 1920, height: 1080 };
 const PORT = 4174;
@@ -78,7 +74,7 @@ async function devnetSetup(): Promise<Setup> {
   const sellerAddress = (await callPatiently(seller, 'get_wallet')).data.address;
 
   return {
-    agents: { buyer, seller, sellerAddress, amount: 5, call: callPatiently },
+    agents: { buyer, seller, sellerAddress, amount: 2, call: callPatiently },
     site: LIVE_SITE,
     network: 'Live on Solana devnet',
     proof: `${PROOF} live on Solana devnet.`,
@@ -92,15 +88,20 @@ async function story(page: Parameters<typeof intro>[0], setup: Setup, seconds: (
   const paid = await paidJob(page, setup.agents);
   const diagramEnd = seconds();
 
-  await verify(page, jobUrl(paid), [
+  await verify(page, jobUrl(paid), 'paid', [
     'Every step is on-chain. So is the bar the work had to clear.',
     'Anyone can re-run the test. Here it runs in the browser.',
   ]);
-  await verify(page, jobUrl(await rejectedJob(page, setup.agents)), [
+  await verify(page, jobUrl(await rejectedJob(page, setup.agents)), 'rejected', [
     'The buyer got the money back without asking anyone.',
     'And the failure is public and reproducible.',
   ]);
-  await site(page, `${setup.site}#/agents`, 'Reputation is the record of settled escrows.', 4_000);
+  await site(
+    page,
+    `${setup.site}#/agents`,
+    'agents',
+    'Reputation is the record of settled escrows.',
+  );
   await install(page);
   await outro(page);
 
@@ -119,19 +120,25 @@ async function film(setup: Setup): Promise<Take> {
   const started = Date.now();
   const seconds = () => (Date.now() - started) / 1000;
 
+  startTrack();
   await openStage(page, setup.network, setup.proof);
   await intro(page);
   const diagramStart = seconds();
   const diagramEnd = await story(page, setup, seconds);
+  const length = seconds();
 
   await context.close();
   await browser.close();
 
-  return { raw: (await page.video()?.path()) as string, diagram: [diagramStart, diagramEnd] };
+  return {
+    raw: (await page.video()?.path()) as string,
+    seconds: length,
+    diagram: [diagramStart, diagramEnd],
+  };
 }
 
 /** Encodes the recording as an MP4, a GIF teaser of the first diagram and a poster frame. */
-function encode({ raw, diagram: [start, end] }: Take): void {
+function encode({ raw, seconds, diagram: [start, end] }: Take): void {
   const run = (args: string[]) => execFileSync('ffmpeg', ['-y', ...args], { stdio: 'ignore' });
   const gif =
     'fps=12,scale=880:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];[b][p]paletteuse';
@@ -147,12 +154,14 @@ function encode({ raw, diagram: [start, end] }: Take): void {
     '-r',
     '30',
   ];
+  const sound = soundtrack(spokenCues(), seconds);
+  const film = ['-i', raw, ...sound.inputs, ...sound.output, ...h264];
 
-  run(['-i', raw, ...h264, '-movflags', '+faststart', `${MEDIA}/promo.mp4`]);
+  run([...film, '-movflags', '+faststart', `${MEDIA}/promo.mp4`]);
   run(['-ss', `${start}`, '-t', `${end - start}`, '-i', raw, '-vf', gif, `${MEDIA}/promo.gif`]);
   run([
     '-ss',
-    '11',
+    `${start - 1}`,
     '-i',
     raw,
     '-frames:v',
@@ -163,6 +172,7 @@ function encode({ raw, diagram: [start, end] }: Take): void {
   ]);
 }
 
+prepareVoice();
 const setup = await (process.env.PROMO_NETWORK === 'devnet' ? devnetSetup() : localSetup());
 const take = await film(setup).finally(setup.stop);
 

@@ -45,7 +45,7 @@ export const STAGE_SCRIPT = `
       setTimeout(() => { headline.textContent = text; headline.classList.remove('out'); }, 280);
     },
     reset() {
-      flowLayer.querySelectorAll('.row').forEach((row) => row.remove());
+      flowLayer.querySelectorAll('.row, .stamp').forEach((row) => row.remove());
       rows = 0;
     },
     arrow(from, to, kind, label, note, coin) {
@@ -63,6 +63,9 @@ export const STAGE_SCRIPT = `
     chip(kind, text) {
       const chip = Object.assign(document.createElement('span'), { className: 'chip ' + kind, textContent: text });
       flowLayer.querySelector('.row:last-of-type .self').append(chip);
+    },
+    stamp(kind, text, lane) {
+      flowLayer.append(Object.assign(document.createElement('div'), { className: 'stamp ' + kind, textContent: text, style: 'left:' + (X[lane] + X.program) / 2 + 'px' }));
     },
     balance(lane, value) {
       countTo($('.lane.' + lane + ' .amount'), Number(value));
