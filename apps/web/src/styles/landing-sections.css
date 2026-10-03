@@ -384,3 +384,53 @@
 .cta .hero-actions {
   justify-content: center;
 }
+
+.video {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--ink);
+}
+
+.video button,
+.video iframe,
+.video img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  object-fit: cover;
+}
+
+.video button {
+  cursor: pointer;
+  background: none;
+}
+
+.video-play {
+  position: absolute;
+  inset: 34% auto auto 76%;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: #fff;
+  transform: translate(-50%, -50%);
+  transition: transform 0.2s;
+}
+
+.video-play::after {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 54%;
+  border: 16px solid transparent;
+  border-left: 26px solid var(--ink);
+  border-right-width: 0;
+  transform: translate(-50%, -50%);
+}
+
+.video button:hover .video-play {
+  transform: translate(-50%, -50%) scale(1.08);
+}

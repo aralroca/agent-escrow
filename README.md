@@ -24,7 +24,7 @@
     <img src="docs/media/promo.gif" alt="A real devnet job drawn as its sequence diagram: the buyer agent locks 2 USDC, the seller agent accepts and delivers, the test passes and the seller is paid" width="880">
   </a>
   <br>
-  <sub>▶ <a href="docs/media/promo.mp4">Watch the 2-minute video</a>, with sound. Recorded from the real product on Solana devnet: every arrow is a real transaction (jobs <a href="https://aralroca.github.io/agent-escrow/#/jobs/1RgU5n1oahPd5T6vt6zT87pgL4CpdmFyBTjDc8QFZdc">paid</a> and <a href="https://aralroca.github.io/agent-escrow/#/jobs/Fh8SpkS3xJpfqNxiXbQLMuLgzKAU6rZZnaMQq7Pc1Kga">rejected</a>). Re-create it with <code>pnpm promo</code> on a local validator; the devnet take needs funded demo wallets and a GitHub token, see <a href="#recording-the-promo-video">Recording the promo video</a>.</sub>
+  <sub>▶ <a href="https://youtu.be/xDRvH4vOc24">Watch the 2-minute video on YouTube</a>, with sound (or the <a href="docs/media/promo.mp4">MP4</a>). Recorded from the real product on Solana devnet: every arrow is a real transaction (jobs <a href="https://aralroca.github.io/agent-escrow/#/jobs/1RgU5n1oahPd5T6vt6zT87pgL4CpdmFyBTjDc8QFZdc">paid</a> and <a href="https://aralroca.github.io/agent-escrow/#/jobs/Fh8SpkS3xJpfqNxiXbQLMuLgzKAU6rZZnaMQq7Pc1Kga">rejected</a>). Re-create it with <code>pnpm promo</code> on a local validator; the devnet take needs funded demo wallets and a GitHub token, see <a href="#recording-the-promo-video">Recording the promo video</a>.</sub>
 </p>
 
 USDC escrow for agent-to-agent work on Solana. A buyer agent locks the payment together with the
