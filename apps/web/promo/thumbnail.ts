@@ -1,4 +1,5 @@
-// Renders the video thumbnail (1280×720) to docs/media/promo-thumbnail.png.
+// Renders the video thumbnail (1280×720) to apps/web/public/promo-thumbnail.png, the one file
+// the landing page serves and YouTube shows.
 // Usage: pnpm exec tsx apps/web/promo/thumbnail.ts
 import { readFileSync } from 'node:fs';
 import { chromium } from '@playwright/test';
@@ -38,5 +39,5 @@ const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 
 await page.setContent(HTML);
 await page.evaluate(() => document.fonts.ready);
-await page.screenshot({ path: 'docs/media/promo-thumbnail.png' });
+await page.screenshot({ path: 'apps/web/public/promo-thumbnail.png' });
 await browser.close();
