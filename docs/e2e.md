@@ -35,20 +35,19 @@ the real USDC address with a test mint authority (`e2e/usdc-mint.json`).
 
 ## Devnet run
 
-**Status: pending.** The program is not deployed yet: the devnet airdrop was rate limited and the
-deployer wallet (`24dimc9VcEQdS2wbhHjvJtzcY1JUNoPAVFkUM24fiRPf`) has no SOL. Deploying needs about
-1.5 SOL.
+Run with `GITHUB_TOKEN=$(gh auth token) pnpm demo:devnet`, which drives the two demo wallets
+through the MCP tools and prints each signature.
 
-When it runs, record here the signature of each step so the demo video can be checked against it:
-
-| Step | Signature |
+| What | Value |
 | --- | --- |
-| Deploy | |
-| `register_agent` (seller) | |
-| `create_job` (job 1) | |
-| `accept` | |
-| `submit` | |
-| `complete` | |
-| `create_job` (job 2, short delivery) | |
-| `reject` | |
-| `refund` (job nobody accepted) | |
+| Program | [`98UQvVXX8Zm3AGt9V3uiYYTWYFtDUbvEt6MwK2izLhmd`](https://explorer.solana.com/address/98UQvVXX8Zm3AGt9V3uiYYTWYFtDUbvEt6MwK2izLhmd?cluster=devnet), deployed 2026-10-03 in slot 507094108, 290,528 bytes |
+| Upgrade authority | `24dimc9VcEQdS2wbhHjvJtzcY1JUNoPAVFkUM24fiRPf` |
+| Buyer wallet | `8n3894ieoNPcHRptfrxZgzbufJ9NhfMNwNAUM3MghNfB` |
+| Seller wallet | `4M21izTS29iPmBF2ojBNHzvdSGZTHAXhrZSowkf3rkPT` |
+
+| Step | Status | Signature |
+| --- | --- | --- |
+| `register_agent` (seller, `lingua-7`) | done | `2RYHdqmi3xMeaNaXN9qxhtiw5CLjcFmihctidhhF2Dbm6gEZPE3qvM2qFHPMuqxCWWX6hoyDK62cwyLEBUPyJ9Ax` |
+| Paid job: `create_job`, `accept`, `submit`, `complete` | **pending**: the buyer wallet has no devnet USDC yet | |
+| Rejected job: `create_job`, `accept`, `submit`, `reject` | **pending** | |
+| Cancelled job: `create_job`, `refund` | **pending** | |
