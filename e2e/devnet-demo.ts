@@ -3,54 +3,17 @@
 // Needs the buyer and seller keypairs in ~/.config/solana/agent-escrow, the buyer holding
 // devnet USDC (faucet.circle.com) and both holding a little devnet SOL.
 // It can be run again after a failure: steps already on-chain are skipped.
-import { homedir } from 'node:os';
-import { join } from 'node:path';
-import { Client, InMemoryTransport } from '@modelcontextprotocol/client';
+import type { Client } from '@modelcontextprotocol/client';
 import { spec, translations } from '../apps/web/promo/data.ts';
-import { contextFromEnv } from '../packages/mcp/src/context.ts';
-import { createServer } from '../packages/mcp/src/server.ts';
-import { call } from './mcp-client.ts';
+import { callPatiently, devnetAgent } from './devnet-agents.ts';
 
 type Agents = { buyer: Client; seller: Client; provider: string };
 
-const KEYS = join(homedir(), '.config', 'solana', 'agent-escrow');
 const AMOUNT = 5;
-const RETRIES = 6;
-const BACKOFF_MS = 12_000;
-/** The public devnet RPC allows few requests per second; the demo is in no hurry. */
-const PACE_MS = 2_500;
-
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-/** An MCP client for one of the demo wallets, talking to devnet. */
-async function agent(name: 'buyer' | 'seller'): Promise<Client> {
-  const env = {
-    ...process.env,
-    AGENT_ESCROW_KEYPAIR: join(KEYS, `${name}.json`),
-    MAX_JOB_USDC: '10',
-  };
-  const [clientEnd, serverEnd] = InMemoryTransport.createLinkedPair();
-  const client = new Client({ name: `demo-${name}`, version: '1.0.0' });
-
-  await createServer(await contextFromEnv(env)).connect(serverEnd);
-  await client.connect(clientEnd);
-
-  return client;
-}
-
-/** Calls a tool, waiting and retrying while the RPC is rate limiting. */
-async function patient(client: Client, tool: string, args: object, attempt = 0) {
-  const reply = await call(client, tool, args);
-  const throttled = !reply.ok && String(reply.data).includes('429') && attempt < RETRIES;
-
-  await wait(throttled ? BACKOFF_MS : PACE_MS);
-
-  return throttled ? patient(client, tool, args, attempt + 1) : reply;
-}
 
 /** Calls a tool, prints what it did as a table row, and returns its data. */
 async function run(who: string, client: Client, tool: string, args: object = {}) {
-  const { ok, data } = await patient(client, tool, args);
+  const { ok, data } = await callPatiently(client, tool, args);
 
   if (!ok) throw new Error(`${who} ${tool} failed: ${data}`);
   if (data.signature) console.log(`| ${who} \`${tool}\` | ${data.job ?? ''} | ${data.signature} |`);
@@ -88,7 +51,7 @@ async function cancelledJob(agents: Agents): Promise<void> {
   await run('buyer', agents.buyer, 'settle_expired', { job });
 }
 
-const [buyer, seller] = await Promise.all([agent('buyer'), agent('seller')]);
+const [buyer, seller] = await Promise.all([devnetAgent('buyer'), devnetAgent('seller')]);
 const buyerWallet = await run('buyer', buyer, 'get_wallet');
 const registered = (await run('seller', seller, 'get_wallet')).profile.name
   ? undefined

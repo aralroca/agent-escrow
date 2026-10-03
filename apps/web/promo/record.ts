@@ -1,30 +1,37 @@
-// Records the promo video: `pnpm promo`. Needs `anchor build`, the Solana CLI and ffmpeg.
-// Everything on screen is the real product on a local validator; nothing is mocked.
+// Records the product video. Needs ffmpeg; nothing on screen is mocked.
+//   pnpm promo                          local validator (needs `anchor build` and the Solana CLI)
+//   PROMO_NETWORK=devnet pnpm promo     live program and site on devnet, with the demo wallets
+//                                       (set GITHUB_TOKEN so specs and deliverables can be published)
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium } from '@playwright/test';
+import { callPatiently, devnetAgent } from '../../../e2e/devnet-agents.ts';
 import { call, connectAgent } from '../../../e2e/mcp-client.ts';
 import startValidator, { RPC_URL } from '../../../e2e/validator.ts';
 import { fundedSigner, mintUsdc, serveFiles, USDC } from '../../../e2e/world.ts';
 import {
   type Agents,
+  install,
   intro,
-  landing,
   outro,
   paidJob,
   rejectedJob,
-  reputation,
+  site,
   verify,
 } from './scenes.ts';
-import { prepare } from './stage.ts';
+import { openStage } from './stage.ts';
+
+type Setup = { agents: Agents; site: string; network: string; proof: string; stop: () => void };
+type Take = { raw: string; diagram: [start: number, end: number] };
 
 const SIZE = { width: 1920, height: 1080 };
 const PORT = 4174;
-const SITE = `http://localhost:${PORT}/agent-escrow/`;
 const MEDIA = 'docs/media';
 const WEB = ['--filter', '@agent-escrow/web'];
+const LIVE_SITE = 'https://aralroca.github.io/agent-escrow/';
+const PROOF = 'Every arrow is a real transaction. Recorded';
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -40,23 +47,68 @@ async function startSite(): Promise<ChildProcess> {
   return server;
 }
 
-/** Two agents with their own wallets; the seller is registered, the buyer holds test USDC. */
-async function createAgents(files: Awaited<ReturnType<typeof serveFiles>>): Promise<Agents> {
+/** A throwaway world: local validator, two fresh wallets, the site built against it. */
+async function localSetup(): Promise<Setup> {
+  const stopValidator = await startValidator();
+  const files = await serveFiles();
+  const server = await startSite();
   const [buyerKey, sellerKey] = await Promise.all([fundedSigner(), fundedSigner()]);
   const publish = async (name: string, content: unknown) =>
     files.host(`${crypto.randomUUID()}-${name}`, content);
   const [buyer, seller] = await Promise.all(
     [buyerKey, sellerKey].map((key) => connectAgent(key, publish)),
   );
+  const agents = { buyer, seller, sellerAddress: sellerKey.address as string, amount: 30, call };
 
   await mintUsdc(buyerKey.address, 200n * USDC);
   await call(seller, 'register_agent', { name: 'lingua-7', capabilities: ['translation'] });
 
-  return { buyer, seller, sellerAddress: sellerKey.address };
+  return {
+    agents,
+    site: `http://localhost:${PORT}/agent-escrow/`,
+    network: 'Local Solana validator',
+    proof: `${PROOF} on a local Solana validator.`,
+    stop: () => [server.kill(), files.close(), stopValidator()],
+  };
 }
 
-/** Plays every scene in one browser page while Playwright records it. Returns the raw video. */
-async function film(agents: Agents): Promise<string> {
+/** The deployed program, the public site and the two demo wallets on devnet. */
+async function devnetSetup(): Promise<Setup> {
+  const [buyer, seller] = await Promise.all([devnetAgent('buyer'), devnetAgent('seller')]);
+  const sellerAddress = (await callPatiently(seller, 'get_wallet')).data.address;
+
+  return {
+    agents: { buyer, seller, sellerAddress, amount: 5, call: callPatiently },
+    site: LIVE_SITE,
+    network: 'Live on Solana devnet',
+    proof: `${PROOF} live on Solana devnet.`,
+    stop: () => undefined,
+  };
+}
+
+/** The scenes after the intro. Returns when the first diagram, used as the teaser, ended. */
+async function story(page: Parameters<typeof intro>[0], setup: Setup, seconds: () => number) {
+  const jobUrl = (job: string) => `${setup.site}#/jobs/${job}`;
+  const paid = await paidJob(page, setup.agents);
+  const diagramEnd = seconds();
+
+  await verify(page, jobUrl(paid), [
+    'Every step is on-chain. So is the bar the work had to clear.',
+    'Anyone can re-run the test. Here it runs in the browser.',
+  ]);
+  await verify(page, jobUrl(await rejectedJob(page, setup.agents)), [
+    'The buyer got the money back without asking anyone.',
+    'And the failure is public and reproducible.',
+  ]);
+  await site(page, `${setup.site}#/agents`, 'Reputation is the record of settled escrows.', 4_000);
+  await install(page);
+  await outro(page);
+
+  return diagramEnd;
+}
+
+/** Plays every scene in one browser page while Playwright records it. */
+async function film(setup: Setup): Promise<Take> {
   const raw = mkdtempSync(join(tmpdir(), 'agent-escrow-video-'));
   const browser = await chromium.launch();
   const context = await browser.newContext({
@@ -64,64 +116,58 @@ async function film(agents: Agents): Promise<string> {
     recordVideo: { dir: raw, size: SIZE },
   });
   const page = await context.newPage();
+  const started = Date.now();
+  const seconds = () => (Date.now() - started) / 1000;
 
-  await prepare(page);
+  await openStage(page, setup.network, setup.proof);
   await intro(page);
-  await landing(page, SITE);
-  const paid = await paidJob(page, agents);
-  await verify(page, SITE, paid, [
-    'Every step is on-chain. So is the bar the work had to clear.',
-    'Anyone can re-run the test. Here it runs in the browser.',
-  ]);
-  const rejected = await rejectedJob(page, agents);
-  await verify(page, SITE, rejected, [
-    'The buyer got the money back without asking anyone.',
-    'And the failure is public and reproducible.',
-  ]);
-  await reputation(page, SITE);
-  await outro(page);
+  const diagramStart = seconds();
+  const diagramEnd = await story(page, setup, seconds);
+
   await context.close();
   await browser.close();
 
-  return (await page.video()?.path()) as string;
+  return { raw: (await page.video()?.path()) as string, diagram: [diagramStart, diagramEnd] };
 }
 
-/** Encodes the recording as an MP4, a short GIF teaser and a poster frame. */
-function encode(raw: string): void {
-  const input = ['-y', '-ss', '0.5', '-i', raw];
+/** Encodes the recording as an MP4, a GIF teaser of the first diagram and a poster frame. */
+function encode({ raw, diagram: [start, end] }: Take): void {
+  const run = (args: string[]) => execFileSync('ffmpeg', ['-y', ...args], { stdio: 'ignore' });
   const gif =
-    'fps=12,scale=880:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96[p];[b][p]paletteuse';
-  const run = (args: string[]) => execFileSync('ffmpeg', [...input, ...args], { stdio: 'ignore' });
-
-  run([
+    'fps=12,scale=880:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];[b][p]paletteuse';
+  const h264 = [
     '-c:v',
     'libx264',
     '-preset',
     'slow',
     '-crf',
-    '21',
+    '20',
     '-pix_fmt',
     'yuv420p',
     '-r',
     '30',
-    '-movflags',
-    '+faststart',
-    `${MEDIA}/promo.mp4`,
+  ];
+
+  run(['-i', raw, ...h264, '-movflags', '+faststart', `${MEDIA}/promo.mp4`]);
+  run(['-ss', `${start}`, '-t', `${end - start}`, '-i', raw, '-vf', gif, `${MEDIA}/promo.gif`]);
+  run([
+    '-ss',
+    '11',
+    '-i',
+    raw,
+    '-frames:v',
+    '1',
+    '-vf',
+    'scale=1280:-1',
+    `${MEDIA}/promo-poster.png`,
   ]);
-  // The teaser is the first job drawn as its sequence diagram.
-  run(['-ss', '14.6', '-t', '15.2', '-vf', gif, `${MEDIA}/promo.gif`]);
-  run(['-ss', '5', '-frames:v', '1', '-vf', 'scale=1280:-1', `${MEDIA}/promo-poster.png`]);
 }
 
-const stopValidator = await startValidator();
-const files = await serveFiles();
-const site = await startSite();
-const raw = await film(await createAgents(files)).finally(() => {
-  site.kill();
-  files.close();
-  stopValidator();
-});
+const setup = await (process.env.PROMO_NETWORK === 'devnet' ? devnetSetup() : localSetup());
+const take = await film(setup).finally(setup.stop);
 
-encode(raw);
-console.log(`Promo written to ${MEDIA}/promo.mp4`);
+encode(take);
+console.log(
+  `Promo written to ${MEDIA}/promo.mp4 (diagram ${take.diagram.map(Math.round).join('–')} s)`,
+);
 process.exit(0);
