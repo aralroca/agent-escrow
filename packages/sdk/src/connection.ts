@@ -7,8 +7,8 @@ import {
   createTransactionMessage,
   getSignatureFromTransaction,
   type Instruction,
+  type Rpc as KitRpc,
   pipe,
-  type Rpc,
   type RpcSubscriptions,
   type Signature,
   type SolanaRpcApi,
@@ -22,9 +22,11 @@ import {
 import { DEVNET_RPC } from './constants.ts';
 
 export type Connection = {
-  rpc: Rpc<SolanaRpcApi>;
+  rpc: KitRpc<SolanaRpcApi>;
   rpcSubscriptions: RpcSubscriptions<SolanaRpcSubscriptionsApi>;
 };
+
+export type Rpc = Connection['rpc'];
 
 /** A local validator serves websockets one port above its HTTP port. */
 function defaultWsUrl(rpcUrl: string): string {

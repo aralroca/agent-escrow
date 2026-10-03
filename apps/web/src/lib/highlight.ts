@@ -1,4 +1,4 @@
-export type Token = { text: string; kind?: 'key' | 'str' | 'num' | 'com' | 'fn' };
+type Token = { text: string; kind?: 'key' | 'str' | 'num' | 'com' | 'fn' };
 
 const KEYWORDS = new Set(['const', 'await', 'new', 'import', 'from', 'export', 'async', 'return']);
 // Order matters: comments and strings first so their contents are not re-tokenised.

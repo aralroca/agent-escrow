@@ -1,13 +1,10 @@
-import { Client, InMemoryTransport } from '@modelcontextprotocol/client';
+import type { Client } from '@modelcontextprotocol/client';
 import type { KeyPairSigner } from '@solana/kit';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { Context } from '../packages/mcp/src/context.ts';
-import { createServer, TOOLS } from '../packages/mcp/src/server.ts';
+import { TOOLS } from '../packages/mcp/src/server.ts';
 import { products, spec } from './fixtures.ts';
-import { balanceOf, connection, fundedSigner, mintUsdc, serveFiles, USDC } from './world.ts';
-
-// biome-ignore lint/suspicious/noExplicitAny: tool replies are arbitrary JSON
-type Reply = { ok: boolean; data: any };
+import { call, connectAgent, type Reply } from './mcp-client.ts';
+import { balanceOf, fundedSigner, mintUsdc, serveFiles, USDC } from './world.ts';
 
 let files: Awaited<ReturnType<typeof serveFiles>>;
 let buyerKey: KeyPairSigner;
@@ -16,27 +13,9 @@ let buyer: Client;
 let seller: Client;
 let published = 0;
 
-/** An MCP client wired in memory to a server that signs as `signer`. */
-async function agent(signer: KeyPairSigner): Promise<Client> {
-  const publish = async (name: string, content: unknown) =>
-    files.host(`${published++}-${name}`, content);
-  const context: Context = { connection, signer, maxJobAmount: 50n * USDC, publish };
-  const [clientEnd, serverEnd] = InMemoryTransport.createLinkedPair();
-  const client = new Client({ name: 'test-agent', version: '1.0.0' });
-
-  await createServer(context).connect(serverEnd);
-  await client.connect(clientEnd);
-
-  return client;
-}
-
-/** Calls a tool and parses its reply: JSON on success, the error text on failure. */
-async function call(client: Client, name: string, args: object = {}): Promise<Reply> {
-  const result = await client.callTool({ name, arguments: args as Record<string, unknown> });
-  const [{ text }] = result.content as { text: string }[];
-
-  return { ok: !result.isError, data: result.isError ? text : JSON.parse(text) };
-}
+/** Each published document gets its own URL, like a new gist would. */
+const publish = async (name: string, content: unknown) =>
+  files.host(`${published++}-${name}`, content);
 
 async function hire(overrides: object = {}): Promise<Reply> {
   const job = { provider: sellerKey.address, amount_usdc: 30, spec, ...overrides };
@@ -57,7 +36,9 @@ beforeAll(async () => {
   [buyerKey, sellerKey] = await Promise.all([fundedSigner(), fundedSigner()]);
   files = await serveFiles();
   await mintUsdc(buyerKey.address, 1_000n * USDC);
-  [buyer, seller] = await Promise.all([agent(buyerKey), agent(sellerKey)]);
+  [buyer, seller] = await Promise.all(
+    [buyerKey, sellerKey].map((key) => connectAgent(key, publish)),
+  );
   await call(seller, 'register_agent', { name: 'lingua-mcp', capabilities: ['translation'] });
 });
 
@@ -177,7 +158,7 @@ describe('guards', () => {
     const accepted = await call(seller, 'accept_job', { job: data.job });
     const job = await call(seller, 'get_job', { job: data.job });
 
-    expect(accepted.data).toContain('does not match the hash committed on-chain');
+    expect(accepted.data).toContain('does not match the committed hash');
     expect(job.data.status).toBe('Funded');
   });
 
@@ -216,7 +197,7 @@ describe('timed exits', () => {
     const sellerEarly = await call(seller, 'settle_expired', { job: data.job });
 
     expect([accepted.ok, submitted.ok]).toEqual([true, true]);
-    expect(buyerEarly.data).toContain('still has time to deliver');
-    expect(sellerEarly.data).toContain('still has time to judge');
+    expect(buyerEarly.data).toContain('deadline has not passed yet');
+    expect(sellerEarly.data).toContain('review window is still open');
   });
 });

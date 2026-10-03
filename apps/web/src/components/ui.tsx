@@ -20,6 +20,33 @@ export function StatusPill({ status }: { status: JobView['status'] }) {
   return <span className={`pill ${STATUS_STYLE[status]}`}>{status}</span>;
 }
 
+type SegmentedProps<T> = {
+  label: string;
+  options: readonly (readonly [value: T, text: string])[];
+  value: T;
+  onChange: (value: T) => void;
+};
+
+/** A row of mutually exclusive buttons, one of them pressed. */
+export function Segmented<T extends string | number>(props: SegmentedProps<T>) {
+  const { label, options, value, onChange } = props;
+
+  return (
+    <fieldset className="segmented" aria-label={label}>
+      {options.map(([option, text]) => (
+        <button
+          key={option}
+          type="button"
+          aria-pressed={option === value}
+          onClick={() => onChange(option)}
+        >
+          {text}
+        </button>
+      ))}
+    </fieldset>
+  );
+}
+
 /** A syntax-coloured block of JSON or TypeScript. */
 export function Code({ children }: { children: string }) {
   return (

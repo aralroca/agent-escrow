@@ -7,9 +7,10 @@ import { Developers } from './pages/Developers.tsx';
 import { JobDetail } from './pages/JobDetail.tsx';
 import { Jobs } from './pages/Jobs.tsx';
 import { Landing } from './pages/Landing.tsx';
-import { NotFound, Security } from './pages/Security.tsx';
+import { NotFound } from './pages/NotFound.tsx';
+import { Security } from './pages/Security.tsx';
+import './styles/index.css';
 
-// Layout is imported first so the base styles load before every page stylesheet.
 // Hash routing: GitHub Pages serves one file, so every route must live after the "#".
 createRoot(document.getElementById('root') as HTMLElement).render(
   <StrictMode>

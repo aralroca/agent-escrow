@@ -21,10 +21,17 @@ import {
 import type { Address, KeyPairSigner } from '@solana/kit';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { products, spec } from './fixtures.ts';
-import { balanceOf, connection, fundedSigner, mintUsdc, serveFiles, USDC } from './world.ts';
+import {
+  balanceOf,
+  connection,
+  fundedSigner,
+  inOneHour,
+  mintUsdc,
+  serveFiles,
+  USDC,
+} from './world.ts';
 
 const AMOUNT = 30n * USDC;
-const inOneHour = () => BigInt(Math.floor(Date.now() / 1000) + 3_600);
 
 let client: KeyPairSigner;
 let provider: KeyPairSigner;

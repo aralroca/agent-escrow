@@ -46,6 +46,8 @@ pub enum JobStatus {
     Claimed,
 }
 
+/// Fixed-size fields come first so RPC `memcmp` filters can target the parties and the status;
+/// the variable-length URIs go last.
 #[account]
 #[derive(InitSpace)]
 pub struct Job {
@@ -55,14 +57,6 @@ pub struct Job {
     pub mint: Pubkey,
     pub job_id: u64,
     pub amount: u64,
-    /// sha256 of the acceptance spec, fixed when the job is funded.
-    pub spec_hash: [u8; 32],
-    #[max_len(MAX_URI_LEN)]
-    pub spec_uri: String,
-    /// sha256 of the deliverable, set on submit.
-    pub result_hash: [u8; 32],
-    #[max_len(MAX_URI_LEN)]
-    pub result_uri: String,
     /// Unix time by which the provider must submit.
     pub deadline: i64,
     /// Seconds the evaluator has to judge after a submission.
@@ -73,4 +67,22 @@ pub struct Job {
     pub status: JobStatus,
     pub bump: u8,
     pub vault_bump: u8,
+    /// sha256 of the acceptance spec, fixed when the job is funded.
+    pub spec_hash: [u8; 32],
+    /// sha256 of the deliverable, set on submit.
+    pub result_hash: [u8; 32],
+    #[max_len(MAX_URI_LEN)]
+    pub spec_uri: String,
+    #[max_len(MAX_URI_LEN)]
+    pub result_uri: String,
+}
+
+impl Job {
+    /// Records the final status of the job and when it was reached.
+    pub fn settle(&mut self, status: JobStatus) -> Result<()> {
+        self.status = status;
+        self.settled_at = Clock::get()?.unix_timestamp;
+
+        Ok(())
+    }
 }

@@ -714,6 +714,10 @@
     },
     {
       "name": "Job",
+      "docs": [
+        "Fixed-size fields come first so RPC `memcmp` filters can target the parties and the status;",
+        "the variable-length URIs go last."
+      ],
       "type": {
         "kind": "struct",
         "fields": [
@@ -740,28 +744,6 @@
           {
             "name": "amount",
             "type": "u64"
-          },
-          {
-            "name": "spec_hash",
-            "docs": ["sha256 of the acceptance spec, fixed when the job is funded."],
-            "type": {
-              "array": ["u8", 32]
-            }
-          },
-          {
-            "name": "spec_uri",
-            "type": "string"
-          },
-          {
-            "name": "result_hash",
-            "docs": ["sha256 of the deliverable, set on submit."],
-            "type": {
-              "array": ["u8", 32]
-            }
-          },
-          {
-            "name": "result_uri",
-            "type": "string"
           },
           {
             "name": "deadline",
@@ -800,6 +782,28 @@
           {
             "name": "vault_bump",
             "type": "u8"
+          },
+          {
+            "name": "spec_hash",
+            "docs": ["sha256 of the acceptance spec, fixed when the job is funded."],
+            "type": {
+              "array": ["u8", 32]
+            }
+          },
+          {
+            "name": "result_hash",
+            "docs": ["sha256 of the deliverable, set on submit."],
+            "type": {
+              "array": ["u8", 32]
+            }
+          },
+          {
+            "name": "spec_uri",
+            "type": "string"
+          },
+          {
+            "name": "result_uri",
+            "type": "string"
           }
         ]
       }

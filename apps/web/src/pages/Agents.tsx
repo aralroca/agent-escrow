@@ -1,64 +1,32 @@
-import type { AgentView } from '@agent-escrow/sdk';
+import { type AgentView, meetsPolicy } from '@agent-escrow/sdk';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AddressLink, Code, Loaded, Page } from '../components/ui.tsx';
+import { AddressLink, Code, Loaded, Page, Segmented } from '../components/ui.tsx';
 import { loadAgents } from '../lib/data.ts';
 import { percent } from '../lib/format.ts';
 import { useAsync } from '../lib/useAsync.ts';
-import '../styles/app.css';
 
-type Policy = { rate: number; jobs: number };
-type Option = [value: number, label: string];
+type Policy = { minSuccessRate: number; minCompletedJobs: number };
 
-const RATES: Option[] = [
+const RATES = [
   [0, 'Any'],
   [0.95, '95%'],
   [0.98, '98%'],
-];
-const JOBS: Option[] = [
+] as const;
+const JOBS = [
   [0, 'Any'],
   [10, '10+'],
   [100, '100+'],
-];
+] as const;
 
-/** Same rule the MCP server applies: an agent with no history fails any success-rate bar. */
-function meets(agent: AgentView, { rate, jobs }: Policy): boolean {
-  const hasRate = rate === 0 || (agent.successRate ?? 0) >= rate;
+/** The same policy as the tool call an agent would make. */
+function policyCall({ minSuccessRate, minCompletedJobs }: Policy): string {
+  const args = [
+    minSuccessRate && `min_success_rate: ${minSuccessRate}`,
+    minCompletedJobs && `min_completed_jobs: ${minCompletedJobs}`,
+  ].filter(Boolean);
 
-  return hasRate && agent.jobsCompleted >= jobs;
-}
-
-function policyCall({ rate, jobs }: Policy): string {
-  const args = [rate && `min_success_rate: ${rate}`, jobs && `min_completed_jobs: ${jobs}`];
-
-  return `search_agents({ ${args.filter(Boolean).join(', ')} })`.replace('{  }', '{}');
-}
-
-type SegmentedProps = {
-  label: string;
-  options: Option[];
-  value: number;
-  onChange: (value: number) => void;
-};
-
-function Segmented({ label, options, value, onChange }: SegmentedProps) {
-  return (
-    <div className="stack policy-field">
-      <span>{label}</span>
-      <fieldset className="segmented" aria-label={label}>
-        {options.map(([option, text]) => (
-          <button
-            key={option}
-            type="button"
-            aria-pressed={option === value}
-            onClick={() => onChange(option)}
-          >
-            {text}
-          </button>
-        ))}
-      </fieldset>
-    </div>
-  );
+  return args.length ? `search_agents({ ${args.join(', ')} })` : 'search_agents({})';
 }
 
 function AgentRow({ agent }: { agent: AgentView }) {
@@ -116,8 +84,36 @@ function AgentsTable({ agents }: { agents: AgentView[] }) {
   );
 }
 
+type PolicyFormProps = { policy: Policy; onChange: (policy: Policy) => void };
+
+function PolicyForm({ policy, onChange }: PolicyFormProps) {
+  return (
+    <section className="card row policy" aria-label="Hiring policy">
+      <div className="stack policy-field">
+        <span>Min success rate</span>
+        <Segmented
+          label="Min success rate"
+          options={RATES}
+          value={policy.minSuccessRate}
+          onChange={(minSuccessRate) => onChange({ ...policy, minSuccessRate })}
+        />
+      </div>
+      <div className="stack policy-field">
+        <span>Min paid jobs</span>
+        <Segmented
+          label="Min paid jobs"
+          options={JOBS}
+          value={policy.minCompletedJobs}
+          onChange={(minCompletedJobs) => onChange({ ...policy, minCompletedJobs })}
+        />
+      </div>
+      <Code>{policyCall(policy)}</Code>
+    </section>
+  );
+}
+
 export function Agents() {
-  const [policy, setPolicy] = useState<Policy>({ rate: 0, jobs: 0 });
+  const [policy, setPolicy] = useState<Policy>({ minSuccessRate: 0, minCompletedJobs: 0 });
   const agents = useAsync(loadAgents, 'agents');
 
   return (
@@ -126,23 +122,9 @@ export function Agents() {
       title="Agents"
       lead="Ranked by settled escrows, not reviews. Success is paid jobs over settled jobs, straight from the program accounts."
     >
-      <section className="card row policy" aria-label="Hiring policy">
-        <Segmented
-          label="Min success rate"
-          options={RATES}
-          value={policy.rate}
-          onChange={(rate) => setPolicy({ ...policy, rate })}
-        />
-        <Segmented
-          label="Min paid jobs"
-          options={JOBS}
-          value={policy.jobs}
-          onChange={(jobs) => setPolicy({ ...policy, jobs })}
-        />
-        <Code>{policyCall(policy)}</Code>
-      </section>
+      <PolicyForm policy={policy} onChange={setPolicy} />
       <Loaded state={agents}>
-        {(rows) => <AgentsTable agents={rows.filter((agent) => meets(agent, policy))} />}
+        {(rows) => <AgentsTable agents={rows.filter((agent) => meetsPolicy(agent, policy))} />}
       </Loaded>
       <p className="muted">
         To hire one, give its address to your agent's <code>create_job</code> tool.{' '}

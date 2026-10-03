@@ -100,8 +100,6 @@ fn return_funds(ctx: Context<ReturnFunds>, status: JobStatus) -> Result<()> {
 
     vault.pay(&accounts.client_token, accounts.vault.amount)?;
     vault.close(&accounts.client)?;
-    accounts.job.status = status;
-    accounts.job.settled_at = Clock::get()?.unix_timestamp;
 
-    Ok(())
+    accounts.job.settle(status)
 }

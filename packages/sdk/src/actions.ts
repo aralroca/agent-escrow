@@ -1,4 +1,4 @@
-import { fetchBytes, fromHex, parseSpec, sha256Hex } from '@agent-escrow/checks';
+import { fetchBytes, parseSpec, sha256 } from '@agent-escrow/checks';
 import type { Address, Instruction, Signature, TransactionSigner } from '@solana/kit';
 import { getCreateAssociatedTokenIdempotentInstructionAsync } from '@solana-program/token';
 import { type Connection, sendInstructions } from './connection.ts';
@@ -15,7 +15,7 @@ import {
   JobStatus,
 } from './generated/index.ts';
 import { findAgentPda, findJobPda, findTokenAccount } from './pdas.ts';
-import { getJob } from './read.ts';
+import { getJob, type JobRecord } from './read.ts';
 
 export type Receipt = { job: Address; signature: Signature };
 export type NewAgent = { name: string; capabilities?: string[]; uri?: string };
@@ -32,9 +32,7 @@ export type NewJob = {
   jobId?: bigint;
 };
 
-async function hashOf(bytes: Uint8Array): Promise<Uint8Array> {
-  return fromHex(await sha256Hex(bytes));
-}
+type Plan<Accounts> = { accounts: Accounts; prepare: Instruction };
 
 function randomJobId(): bigint {
   return crypto.getRandomValues(new BigUint64Array(1))[0];
@@ -47,6 +45,22 @@ async function send(
   instructions: Instruction[],
 ): Promise<Receipt> {
   return { job, signature: await sendInstructions(connection, signer, instructions) };
+}
+
+/** An instruction that creates the owner's USDC account when it is missing. */
+function ensureTokenAccount(payer: TransactionSigner, owner: Address) {
+  const mint = USDC_DEVNET_MINT;
+
+  return getCreateAssociatedTokenIdempotentInstructionAsync({ payer, owner, mint });
+}
+
+/** A spec nobody can run would make the job impossible to judge, so it is refused up front. */
+async function fetchValidSpec(specUri: string): Promise<Uint8Array> {
+  const bytes = await fetchBytes(specUri);
+
+  parseSpec(bytes);
+
+  return bytes;
 }
 
 /** Creates the agent profile, or updates its name, capabilities and URI. */
@@ -65,29 +79,21 @@ export async function registerAgent(
   return sendInstructions(connection, signer, [instruction]);
 }
 
-/** Fills what the caller left out. Explicit `undefined` counts as left out. */
-function withDefaults(input: NewJob, client: Address) {
-  const { jobId = randomJobId(), evaluator = client, reviewWindow = DEFAULT_REVIEW_WINDOW } = input;
-
-  return { ...input, mint: USDC_DEVNET_MINT, jobId, evaluator, reviewWindow };
-}
-
 /** Commits the acceptance spec by hash and locks the payment, in one transaction. */
 export async function createJob(
   connection: Connection,
   signer: TransactionSigner,
   input: NewJob,
 ): Promise<Receipt> {
-  const details = withDefaults(input, signer.address);
-  const spec = await fetchBytes(input.specUri);
-  const job = await findJobPda(signer.address, details.jobId);
-  const clientToken = await findTokenAccount(signer.address, details.mint);
-  const specHash = await hashOf(spec);
-  const accounts = { client: signer, job, clientToken };
-
-  // A spec nobody can run would make the job impossible to judge, so refuse it up front.
-  parseSpec(spec);
-  const instruction = await getCreateJobInstructionAsync({ ...details, ...accounts, specHash });
+  // Explicit `undefined` counts as left out, so the defaults come from destructuring.
+  const { jobId = randomJobId(), evaluator = signer.address, ...rest } = input;
+  const reviewWindow = input.reviewWindow ?? DEFAULT_REVIEW_WINDOW;
+  const specHash = await sha256(await fetchValidSpec(input.specUri));
+  const job = await findJobPda(signer.address, jobId);
+  const clientToken = await findTokenAccount(signer.address, USDC_DEVNET_MINT);
+  const accounts = { client: signer, job, mint: USDC_DEVNET_MINT, clientToken };
+  const args = { ...rest, jobId, evaluator, reviewWindow, specHash };
+  const instruction = await getCreateJobInstructionAsync({ ...args, ...accounts });
 
   return send(connection, signer, job, [instruction]);
 }
@@ -98,8 +104,7 @@ export async function acceptJob(
   signer: TransactionSigner,
   job: Address,
 ): Promise<Receipt> {
-  const { mint } = await getJob(connection.rpc, job);
-  const createTokenAccount = await ensureTokenAccount(signer, signer.address, mint);
+  const createTokenAccount = await ensureTokenAccount(signer, signer.address);
   const accept = await getAcceptInstructionAsync({ provider: signer, job });
 
   return send(connection, signer, job, [createTokenAccount, accept]);
@@ -112,80 +117,67 @@ export async function submitResult(
   job: Address,
   resultUri: string,
 ): Promise<Receipt> {
-  const resultHash = await hashOf(await fetchBytes(resultUri));
+  const resultHash = await sha256(await fetchBytes(resultUri));
   const instruction = getSubmitInstruction({ provider: signer, job, resultHash, resultUri });
 
   return send(connection, signer, job, [instruction]);
-}
-
-/** An instruction that creates the owner's token account when it is missing. */
-function ensureTokenAccount(payer: TransactionSigner, owner: Address, mint: Address) {
-  return getCreateAssociatedTokenIdempotentInstructionAsync({ payer, owner, mint });
 }
 
 /**
  * Everything a payout to the provider needs. The provider's token account is created when
  * missing, so closing it cannot be used to block a verdict.
  */
-async function releasePlan(connection: Connection, authority: TransactionSigner, job: Address) {
-  const { client, provider, mint } = await getJob(connection.rpc, job);
+async function releasePlan(authority: TransactionSigner, job: JobRecord) {
+  const { address, client, provider, mint } = job;
   const providerToken = await findTokenAccount(provider, mint);
-  const accounts = { authority, job, client, provider, mint, providerToken };
+  const accounts = { authority, job: address, client, provider, mint, providerToken };
 
-  return { accounts, prepare: await ensureTokenAccount(authority, provider, mint) };
+  return { accounts, prepare: await ensureTokenAccount(authority, provider) };
 }
 
 /** Everything a refund to the client needs, creating the client's token account when missing. */
-async function returnPlan(connection: Connection, authority: TransactionSigner, job: Address) {
-  const { client, provider, mint, status } = await getJob(connection.rpc, job);
+async function returnPlan(authority: TransactionSigner, job: JobRecord) {
+  const { address, client, provider, mint, status } = job;
   const clientToken = await findTokenAccount(client, mint);
   // A job nobody accepted has no provider record to update.
   const providerProfile = status === JobStatus.Funded ? undefined : await findAgentPda(provider);
-  const accounts = { authority, job, client, mint, clientToken, providerProfile };
+  const accounts = { authority, job: address, client, mint, clientToken, providerProfile };
 
-  return { accounts, prepare: await ensureTokenAccount(authority, client, mint) };
+  return { accounts, prepare: await ensureTokenAccount(authority, client) };
+}
+
+/**
+ * Builds a settlement action from the accounts it needs and the instruction it sends.
+ * Callers that already loaded the job pass the record and save a round trip.
+ */
+function settlement<Accounts>(
+  plan: (authority: TransactionSigner, job: JobRecord) => Promise<Plan<Accounts>>,
+  build: (accounts: Accounts) => Promise<Instruction>,
+) {
+  return async function settle(
+    connection: Connection,
+    signer: TransactionSigner,
+    job: Address | JobRecord,
+  ): Promise<Receipt> {
+    const record = typeof job === 'string' ? await getJob(connection.rpc, job) : job;
+    const { accounts, prepare } = await plan(signer, record);
+
+    return send(connection, signer, record.address, [prepare, await build(accounts)]);
+  };
 }
 
 /** The evaluator approves: the provider is paid, minus the protocol fee. */
-export async function completeJob(
-  connection: Connection,
-  signer: TransactionSigner,
-  job: Address,
-): Promise<Receipt> {
-  const { accounts, prepare } = await releasePlan(connection, signer, job);
-
-  return send(connection, signer, job, [prepare, await getCompleteInstructionAsync(accounts)]);
-}
+export const completeJob = settlement(releasePlan, (accounts) =>
+  getCompleteInstructionAsync(accounts),
+);
 
 /** The provider collects after the review window closed without a verdict. */
-export async function claimTimeout(
-  connection: Connection,
-  signer: TransactionSigner,
-  job: Address,
-): Promise<Receipt> {
-  const { accounts, prepare } = await releasePlan(connection, signer, job);
-
-  return send(connection, signer, job, [prepare, await getClaimTimeoutInstructionAsync(accounts)]);
-}
+export const claimTimeout = settlement(releasePlan, (accounts) =>
+  getClaimTimeoutInstructionAsync(accounts),
+);
 
 /** The evaluator rejects: the client is refunded in full. */
-export async function rejectJob(
-  connection: Connection,
-  signer: TransactionSigner,
-  job: Address,
-): Promise<Receipt> {
-  const { accounts, prepare } = await returnPlan(connection, signer, job);
-
-  return send(connection, signer, job, [prepare, await getRejectInstructionAsync(accounts)]);
-}
+export const rejectJob = settlement(returnPlan, (accounts) => getRejectInstructionAsync(accounts));
 
 /** The client takes the payment back: before acceptance, or after a missed deadline. */
-export async function refundJob(
-  connection: Connection,
-  signer: TransactionSigner,
-  job: Address,
-): Promise<Receipt> {
-  const { accounts, prepare } = await returnPlan(connection, signer, job);
-
-  return send(connection, signer, job, [prepare, await getRefundInstructionAsync(accounts)]);
-}
+export const refundJob = settlement(returnPlan, (accounts) => getRefundInstructionAsync(accounts));

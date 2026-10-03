@@ -34,7 +34,6 @@
   "devDependencies": {
     "@agent-escrow/checks": "workspace:*",
     "@agent-escrow/sdk": "workspace:*",
-    "@modelcontextprotocol/client": "^2.3.0",
     "@modelcontextprotocol/server": "^2.3.0",
     "@solana-program/token": "^0.17.0",
     "@solana/kit": "^8.4.0",

@@ -1,6 +1,7 @@
 skip_local_validator = true
 
 [toolchain]
+anchor_version = "1.2.0"
 
 [features]
 resolution = true
@@ -16,4 +17,3 @@ wallet = "~/.config/solana/id.json"
 [scripts]
 test = "cargo test"
 
-[hooks]

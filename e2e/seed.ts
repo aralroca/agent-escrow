@@ -1,11 +1,9 @@
 import { acceptJob, createJob, evaluateJob, registerAgent, submitResult } from '@agent-escrow/sdk';
 import type { Address } from '@solana/kit';
 import { products, spec } from './fixtures.ts';
-import { connection, fundedSigner, mintUsdc, serveFiles, USDC } from './world.ts';
+import { connection, fundedSigner, inOneHour, mintUsdc, serveFiles, USDC } from './world.ts';
 
 export type Seeded = { completed: Address; rejected: Address; funded: Address; close: () => void };
-
-const inOneHour = () => BigInt(Math.floor(Date.now() / 1000) + 3_600);
 
 /**
  * Puts a small, realistic history on the local validator: one seller, and three jobs that ended

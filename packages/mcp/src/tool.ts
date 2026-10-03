@@ -1,4 +1,4 @@
-import { isAddress } from '@solana/kit';
+import { address, isAddress } from '@solana/kit';
 import * as z from 'zod/v4';
 import type { Context } from './context.ts';
 
@@ -17,6 +17,6 @@ export function defineTool<Input extends z.ZodObject>(tool: Tool<Input>): Tool<I
 export const addressSchema = z
   .string()
   .refine(isAddress, 'Must be a base58 Solana address')
-  .transform((value) => value as string as import('@solana/kit').Address);
+  .transform((value) => address(value));
 
 export const jobSchema = addressSchema.describe('Address of the job account');

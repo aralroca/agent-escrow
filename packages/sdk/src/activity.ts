@@ -1,12 +1,12 @@
 import { type Address, getBase58Encoder, type Signature } from '@solana/kit';
-import type { Connection } from './connection.ts';
+import type { Rpc } from './connection.ts';
+import { isoTime } from './format.ts';
 import {
   AGENT_ESCROW_PROGRAM_ADDRESS,
   AgentEscrowInstruction,
   identifyAgentEscrowInstruction,
 } from './generated/index.ts';
 
-type Rpc = Connection['rpc'];
 type RawInstruction = { programIdIndex: number; data: string };
 type RawTransaction = {
   transaction: { message: { accountKeys: Address[]; instructions: RawInstruction[] } };
@@ -21,7 +21,8 @@ export type Activity = {
   failed: boolean;
 };
 
-const HISTORY_LIMIT = 20;
+/** A job has at most five lifecycle transactions; the margin covers failed attempts. */
+const HISTORY_LIMIT = 10;
 const TRANSACTION_CONFIG = { encoding: 'json', maxSupportedTransactionVersion: 0 } as const;
 
 const snakeCase = (name: string) => name.replace(/(?!^)([A-Z])/g, '_$1').toLowerCase();
@@ -46,7 +47,7 @@ export async function listActivity(rpc: Rpc, job: Address): Promise<Activity[]> 
   return history.map(({ signature, blockTime, err }, index) => ({
     signature,
     instruction: instructionName(transactions[index] as unknown as RawTransaction),
-    time: blockTime ? new Date(Number(blockTime) * 1000).toISOString() : undefined,
+    time: isoTime(blockTime ?? 0),
     failed: err !== null,
   }));
 }

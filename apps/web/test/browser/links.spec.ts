@@ -74,7 +74,7 @@ test('every external link answers', async ({ page, request }) => {
     /^https:\/\/(?!explorer\.solana\.com)/.test(href),
   );
 
-  for (const href of external.filter((link) => !link.startsWith('http://127.0.0.1'))) {
+  for (const href of external) {
     const response = await request.get(href);
 
     expect(response.status(), href).toBeLessThan(400);

@@ -1,8 +1,6 @@
 import { useEffect } from 'react';
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import { Shield } from './Icons.tsx';
-import '../styles/base.css';
-import '../styles/layout.css';
 
 export const REPO_URL = 'https://github.com/aralroca/agent-escrow';
 
@@ -42,7 +40,7 @@ const FOOTER = [
   },
 ];
 
-export function Logo({ inverted = false }: { inverted?: boolean }) {
+function Logo({ inverted = false }: { inverted?: boolean }) {
   return (
     <Link to="/" className={`logo ${inverted ? 'logo-inverted' : ''}`}>
       <span className="logo-mark">
@@ -53,16 +51,30 @@ export function Logo({ inverted = false }: { inverted?: boolean }) {
   );
 }
 
+/**
+ * Section links all point at the home page, so they only count as current when their own section
+ * is the one in the URL. Page links also cover their sub-pages, like a job under Jobs.
+ */
+function isCurrent(to: string, pathname: string, search: string): boolean {
+  return to.includes('?') ? to === pathname + search : pathname.startsWith(to);
+}
+
 function Header() {
+  const { pathname, search } = useLocation();
+
   return (
     <header className="header">
       <nav className="container header-inner" aria-label="Main">
         <Logo />
         <div className="header-links">
           {NAV.map((item) => (
-            <NavLink key={item.to} to={item.to} end>
+            <Link
+              key={item.to}
+              to={item.to}
+              aria-current={isCurrent(item.to, pathname, search) ? 'page' : undefined}
+            >
               {item.label}
-            </NavLink>
+            </Link>
           ))}
         </div>
         <div className="row header-actions">
@@ -127,18 +139,19 @@ function Footer() {
 
 /** Scrolls to the element named by `?section=`, or to the top on a plain navigation. */
 function useSectionScroll() {
-  const { pathname, search } = useLocation();
+  const { pathname } = useLocation();
+  const [params] = useSearchParams();
+  const section = params.get('section');
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: a new pathname must scroll to the top too
   useEffect(
     function scrollToSection() {
-      const section = new URLSearchParams(search).get('section');
       const target = section ? document.getElementById(section) : null;
 
       if (target) target.scrollIntoView();
       else window.scrollTo(0, 0);
     },
-    [pathname, search],
+    [pathname, section],
   );
 }
 

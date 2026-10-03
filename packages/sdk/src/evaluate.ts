@@ -1,7 +1,14 @@
-import { type Commitment, type Evaluation, evaluate, toHex } from '@agent-escrow/checks';
+import {
+  type Evaluation,
+  evaluate,
+  fetchVerified,
+  parseSpec,
+  type Spec,
+} from '@agent-escrow/checks';
 import type { Address, Signature, TransactionSigner } from '@solana/kit';
 import { completeJob, rejectJob } from './actions.ts';
 import type { Connection } from './connection.ts';
+import { commitmentOf } from './format.ts';
 import { JobStatus } from './generated/index.ts';
 import { getJob, type JobRecord } from './read.ts';
 
@@ -11,13 +18,11 @@ export type Judgement = {
   signature: Signature;
 };
 
-function commitmentOf(job: JobRecord): Commitment {
-  return {
-    specUri: job.specUri,
-    specHash: toHex(job.specHash as Uint8Array),
-    resultUri: job.resultUri,
-    resultHash: toHex(job.resultHash as Uint8Array),
-  };
+/** The acceptance spec of a job, refused unless it matches the hash committed on-chain. */
+export async function fetchJobSpec(job: JobRecord): Promise<Spec> {
+  const { specUri, specHash } = commitmentOf(job);
+
+  return parseSpec(await fetchVerified(specUri, specHash));
 }
 
 /**
@@ -30,19 +35,24 @@ export async function verifyJob(job: JobRecord): Promise<Evaluation> {
   return evaluate(commitmentOf(job));
 }
 
+function assertAwaitingVerdict(job: JobRecord): JobRecord {
+  if (job.status !== JobStatus.Submitted) {
+    throw new Error(`Job is ${JobStatus[job.status]}, not awaiting a verdict`);
+  }
+
+  return job;
+}
+
 /** Runs the committed acceptance test and settles the job accordingly, as its evaluator. */
 export async function evaluateJob(
   connection: Connection,
   signer: TransactionSigner,
   address: Address,
 ): Promise<Judgement> {
-  const job = await getJob(connection.rpc, address);
-  const awaitingVerdict = job.status === JobStatus.Submitted;
-  const verdict = awaitingVerdict ? await verifyJob(job) : undefined;
-  const settle = verdict?.passed ? completeJob : rejectJob;
-
-  if (!verdict) throw new Error(`Job is ${JobStatus[job.status]}, not awaiting a verdict`);
-  const { signature } = await settle(connection, signer, address);
+  const job = assertAwaitingVerdict(await getJob(connection.rpc, address));
+  const verdict = await verifyJob(job);
+  const settle = verdict.passed ? completeJob : rejectJob;
+  const { signature } = await settle(connection, signer, job);
 
   return { verdict, action: verdict.passed ? 'completed' : 'rejected', signature };
 }

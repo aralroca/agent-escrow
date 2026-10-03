@@ -7,7 +7,4 @@ export const USDC_DEVNET_MINT = address('4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJ
 
 export const USDC_DECIMALS = 6;
 
-/** Protocol fee on released payments, in basis points. Mirrors the program constant. */
-export const FEE_BPS = 25n;
-
 export const DEFAULT_REVIEW_WINDOW = 3_600n;

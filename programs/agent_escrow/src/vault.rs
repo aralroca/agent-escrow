@@ -14,43 +14,47 @@ pub struct Vault<'a, 'info> {
 }
 
 impl<'info> Vault<'_, 'info> {
-    pub fn pay(&self, to: &InterfaceAccount<'info, TokenAccount>, amount: u64) -> Result<()> {
+    /// Runs a token-program call signed by the job account, which owns the vault.
+    fn signed<A, T>(
+        &self,
+        accounts: A,
+        call: impl FnOnce(CpiContext<'_, '_, '_, 'info, A>) -> Result<T>,
+    ) -> Result<T>
+    where
+        A: ToAccountMetas + ToAccountInfos<'info>,
+    {
         let job_id = self.job.job_id.to_le_bytes();
-        let seeds: &[&[u8]] = &[
-            JOB_SEED,
-            self.job.client.as_ref(),
-            &job_id,
-            &[self.job.bump],
-        ];
+        let bump = [self.job.bump];
+        let seeds: &[&[u8]] = &[JOB_SEED, self.job.client.as_ref(), &job_id, &bump];
+
+        call(CpiContext::new_with_signer(
+            self.token_program.key(),
+            accounts,
+            &[seeds],
+        ))
+    }
+
+    pub fn pay(&self, to: &InterfaceAccount<'info, TokenAccount>, amount: u64) -> Result<()> {
         let accounts = TransferChecked {
             from: self.vault.to_account_info(),
             mint: self.mint.to_account_info(),
             to: to.to_account_info(),
             authority: self.job.to_account_info(),
         };
-        let signer = [seeds];
-        let cpi = CpiContext::new_with_signer(self.token_program.key(), accounts, &signer);
 
-        token_interface::transfer_checked(cpi, amount, self.mint.decimals)
+        self.signed(accounts, |cpi| {
+            token_interface::transfer_checked(cpi, amount, self.mint.decimals)
+        })
     }
 
     /// Closes the emptied vault and returns its rent to the client who paid for it.
     pub fn close(&self, client: &AccountInfo<'info>) -> Result<()> {
-        let job_id = self.job.job_id.to_le_bytes();
-        let seeds: &[&[u8]] = &[
-            JOB_SEED,
-            self.job.client.as_ref(),
-            &job_id,
-            &[self.job.bump],
-        ];
         let accounts = CloseAccount {
             account: self.vault.to_account_info(),
             destination: client.clone(),
             authority: self.job.to_account_info(),
         };
-        let signer = [seeds];
-        let cpi = CpiContext::new_with_signer(self.token_program.key(), accounts, &signer);
 
-        token_interface::close_account(cpi)
+        self.signed(accounts, token_interface::close_account)
     }
 }

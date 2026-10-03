@@ -1,39 +1,11 @@
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { AgentView } from '@agent-escrow/sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { contextFromEnv } from '../src/context.ts';
 import { publisher } from '../src/hosting.ts';
-import { meetsPolicy } from '../src/tools/agents.ts';
-
-const agent = {
-  capabilities: ['translation'],
-  jobsCompleted: 120,
-  successRate: 0.99,
-} as AgentView;
 
 afterEach(() => vi.unstubAllGlobals());
-
-describe('meetsPolicy', () => {
-  it.each([
-    [{}, true],
-    [{ capability: 'translation' }, true],
-    [{ capability: 'scraping' }, false],
-    [{ min_completed_jobs: 100, min_success_rate: 0.98 }, true],
-    [{ min_completed_jobs: 121 }, false],
-    [{ min_success_rate: 0.995 }, false],
-  ])('%j -> %s', (policy, expected) => {
-    expect(meetsPolicy(agent, policy)).toBe(expected);
-  });
-
-  it('treats an agent with no history as failing any success-rate bar', () => {
-    const newcomer = { ...agent, jobsCompleted: 0, successRate: undefined };
-
-    expect(meetsPolicy(newcomer, { min_success_rate: 0.5 })).toBe(false);
-    expect(meetsPolicy(newcomer, {})).toBe(true);
-  });
-});
 
 describe('publisher', () => {
   it('explains how to host content when no token is configured', async () => {

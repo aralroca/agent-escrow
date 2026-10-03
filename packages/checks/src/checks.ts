@@ -11,7 +11,6 @@ import type {
 
 type Item = Record<string, unknown>;
 
-const ajv = new Ajv({ allErrors: true, strict: false });
 const MAX_LISTED = 3;
 
 function at(data: unknown, path = ''): unknown {
@@ -28,6 +27,8 @@ function listAt(data: unknown, path?: string): Item[] | undefined {
 }
 
 function jsonSchema(check: JsonSchemaCheck, { data }: Deliverable): CheckResult {
+  // A throwaway instance: a shared one would keep every schema it ever compiled in memory.
+  const ajv = new Ajv({ allErrors: true, strict: false });
   const validate = ajv.compile(check.schema);
   const passed = validate(data);
   const errors = validate.errors?.slice(0, MAX_LISTED);

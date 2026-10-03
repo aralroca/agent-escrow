@@ -28,7 +28,7 @@ export function Stepper({ view }: { view: JobView }) {
   const outcome = OUTCOMES[view.status] ?? ['settle', 'Waiting for a verdict or a timeout'];
   const steps = [...STEPS, outcome];
   const done = (index: number) =>
-    index < 3 ? index < REACHED[view.status] : Boolean(view.settledAt);
+    index < STEPS.length ? index < REACHED[view.status] : Boolean(view.settledAt);
 
   return (
     <ol className="card stepper" aria-label="Job lifecycle">

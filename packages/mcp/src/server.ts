@@ -11,7 +11,7 @@ import {
   submitResultTool,
 } from './tools/work.ts';
 
-export const VERSION = '0.1.0';
+const VERSION = '0.1.0';
 
 export const TOOLS = [
   getWallet,

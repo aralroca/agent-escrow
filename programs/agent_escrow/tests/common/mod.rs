@@ -2,8 +2,8 @@
 
 use {
     agent_escrow::{
-        accounts, instruction, AgentProfile, CreateJobArgs, Job, AGENT_SEED, JOB_SEED, TREASURY, USDC_MINT,
-        VAULT_SEED,
+        accounts, instruction, AgentProfile, CreateJobArgs, Job, AGENT_SEED, JOB_SEED, TREASURY,
+        USDC_MINT, VAULT_SEED,
     },
     anchor_lang::{
         prelude::{Clock, Pubkey},

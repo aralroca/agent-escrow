@@ -1,10 +1,15 @@
 import { toHex } from '@agent-escrow/checks';
-import { FEE_BPS, USDC_DECIMALS } from './constants.ts';
-import { JobStatus } from './generated/index.ts';
+import { USDC_DECIMALS } from './constants.ts';
+import { FEE_BPS, JobStatus } from './generated/index.ts';
 import type { AgentRecord, JobRecord } from './read.ts';
+
+export type JobStatusName = keyof typeof JobStatus;
 
 const BPS = 10_000n;
 const UNSET_HASH = '0'.repeat(64);
+
+/** The protocol fee as text, e.g. "0.25%". */
+export const FEE_PERCENT = `${Number(FEE_BPS) / 100}%`;
 
 /** Base units to a decimal string, e.g. 30_000_000n -> "30". */
 export function formatAmount(amount: bigint, decimals = USDC_DECIMALS): string {
@@ -36,17 +41,22 @@ export function successRate(agent: AgentRecord): number | undefined {
   return settled ? agent.jobsCompleted / settled : undefined;
 }
 
-const isoTime = (seconds: bigint) =>
-  seconds ? new Date(Number(seconds) * 1000).toISOString() : undefined;
+export function nowSeconds(): bigint {
+  return BigInt(Math.floor(Date.now() / 1000));
+}
 
-function commitments(job: JobRecord) {
-  const resultHash = toHex(job.resultHash as Uint8Array);
+/** Unix seconds to an ISO string. Zero, the program's "not yet", becomes undefined. */
+export function isoTime(seconds: bigint | number): string | undefined {
+  return seconds ? new Date(Number(seconds) * 1000).toISOString() : undefined;
+}
 
+/** What a job committed on-chain: where the spec and the deliverable live, and their hashes. */
+export function commitmentOf(job: JobRecord) {
   return {
     specUri: job.specUri,
-    specHash: toHex(job.specHash as Uint8Array),
-    resultUri: job.resultUri || undefined,
-    resultHash: resultHash === UNSET_HASH ? undefined : resultHash,
+    specHash: toHex(job.specHash),
+    resultUri: job.resultUri,
+    resultHash: toHex(job.resultHash),
   };
 }
 
@@ -63,14 +73,19 @@ function timeline(job: JobRecord) {
 /** A JSON-friendly view of a job: no bigints, hashes as hex, status as a word. */
 export function describeJob(job: JobRecord) {
   const { address, client, provider, evaluator } = job;
-  const money = { amount: formatAmount(job.amount), fee: formatAmount(protocolFee(job.amount)) };
+  const { resultUri, resultHash, ...spec } = commitmentOf(job);
 
   return {
     address,
-    status: JobStatus[job.status] as keyof typeof JobStatus,
-    ...{ client, provider, evaluator },
-    ...money,
-    ...commitments(job),
+    status: JobStatus[job.status] as JobStatusName,
+    client,
+    provider,
+    evaluator,
+    amount: formatAmount(job.amount),
+    fee: formatAmount(protocolFee(job.amount)),
+    ...spec,
+    resultUri: resultUri || undefined,
+    resultHash: resultHash === UNSET_HASH ? undefined : resultHash,
     ...timeline(job),
   };
 }

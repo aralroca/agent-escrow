@@ -1,4 +1,8 @@
-import { isSolanaError, SOLANA_ERROR__INSTRUCTION_ERROR__CUSTOM } from '@solana/kit';
+import {
+  isSolanaError,
+  SOLANA_ERROR__INSTRUCTION_ERROR__CUSTOM,
+  SOLANA_ERROR__RPC__TRANSPORT_HTTP_ERROR,
+} from '@solana/kit';
 import idl from '../idl/agent_escrow.json' with { type: 'json' };
 
 const PROGRAM_ERRORS = new Map(idl.errors.map(({ code, msg }) => [code, msg]));
@@ -15,6 +19,17 @@ export function programErrorCode(error: unknown): number | undefined {
   );
 
   return (custom as { context?: { code?: number } } | undefined)?.context?.code;
+}
+
+const TOO_MANY_REQUESTS = 429;
+
+/** Whether a call failed because the RPC endpoint is rate limiting the caller. */
+export function isRateLimited(error: unknown): boolean {
+  return causeChain(error).some(
+    (cause) =>
+      isSolanaError(cause, SOLANA_ERROR__RPC__TRANSPORT_HTTP_ERROR) &&
+      cause.context.statusCode === TOO_MANY_REQUESTS,
+  );
 }
 
 /** A human-readable reason for a failed call, preferring the program's own error message. */

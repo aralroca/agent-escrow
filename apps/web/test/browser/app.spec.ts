@@ -38,6 +38,27 @@ test.describe('landing', () => {
   });
 });
 
+test.describe('main menu', () => {
+  const current = '.header-links a[aria-current="page"]';
+
+  test('marks only the section that was opened', async ({ page }) => {
+    await page.goto('');
+    await expect(page.locator(current)).toHaveCount(0);
+
+    await page.locator('.header-links').getByRole('link', { name: 'Protocol' }).click();
+    await expect(page.locator(current)).toHaveText(['Protocol']);
+
+    await page.locator('.header-links').getByRole('link', { name: 'Verification' }).click();
+    await expect(page.locator(current)).toHaveText(['Verification']);
+  });
+
+  test('keeps the page link current on its sub-pages', async ({ page }) => {
+    await page.goto(job('COMPLETED'));
+
+    await expect(page.locator(current)).toHaveText(['Jobs']);
+  });
+});
+
 test.describe('jobs explorer', () => {
   test('lists the seeded jobs with titles from their specs and filters by outcome', async ({
     page,

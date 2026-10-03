@@ -1,19 +1,26 @@
+import {
+  type JobStatusName,
+  OPEN_STATUSES,
+  PAID_STATUSES,
+  RETURNED_STATUSES,
+} from '@agent-escrow/sdk';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AddressLink, Loaded, Page, StatusPill } from '../components/ui.tsx';
+import { AddressLink, Loaded, Page, Segmented, StatusPill } from '../components/ui.tsx';
 import { type JobRow, loadAgents, loadJobs, loadSpec, namesOf } from '../lib/data.ts';
 import { relativeTime, shortAddress } from '../lib/format.ts';
 import { useAsync } from '../lib/useAsync.ts';
-import '../styles/app.css';
 
 const FILTERS = {
   All: undefined,
-  Open: new Set(['Funded', 'Accepted', 'Submitted']),
-  Paid: new Set(['Completed', 'Claimed']),
-  Returned: new Set(['Rejected', 'Expired', 'Refunded']),
-} as const;
+  Open: OPEN_STATUSES,
+  Paid: PAID_STATUSES,
+  Returned: RETURNED_STATUSES,
+} satisfies Record<string, JobStatusName[] | undefined>;
 
 type Filter = keyof typeof FILTERS;
+
+const FILTER_OPTIONS = (Object.keys(FILTERS) as Filter[]).map((name) => [name, name] as const);
 
 /** The job title lives in its spec, so it arrives after the row. */
 export function JobTitle({ job }: { job: JobRow }) {
@@ -71,28 +78,11 @@ function JobsTable({ jobs, names }: { jobs: JobRow[]; names: Map<string, string>
   );
 }
 
-function FilterTabs({ value, onChange }: { value: Filter; onChange: (filter: Filter) => void }) {
-  return (
-    <fieldset className="segmented" aria-label="Filter jobs by status">
-      {(Object.keys(FILTERS) as Filter[]).map((filter) => (
-        <button
-          key={filter}
-          type="button"
-          aria-pressed={filter === value}
-          onClick={() => onChange(filter)}
-        >
-          {filter}
-        </button>
-      ))}
-    </fieldset>
-  );
-}
-
 export function Jobs() {
   const [filter, setFilter] = useState<Filter>('All');
   const jobs = useAsync(loadJobs, 'jobs');
   const agents = useAsync(loadAgents, 'agents');
-  const matches = (job: JobRow) => FILTERS[filter]?.has(job.view.status) ?? true;
+  const matches = (job: JobRow) => FILTERS[filter]?.includes(job.view.status) ?? true;
 
   return (
     <Page
@@ -100,7 +90,12 @@ export function Jobs() {
       title="Jobs"
       lead="Every escrow created through the program, read straight from Solana. Open one to see its acceptance test and re-run it yourself."
     >
-      <FilterTabs value={filter} onChange={setFilter} />
+      <Segmented
+        label="Filter jobs by status"
+        options={FILTER_OPTIONS}
+        value={filter}
+        onChange={setFilter}
+      />
       <Loaded state={jobs}>
         {(rows) => <JobsTable jobs={rows.filter(matches)} names={namesOf(agents.data)} />}
       </Loaded>

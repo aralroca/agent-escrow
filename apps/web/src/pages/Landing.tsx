@@ -1,4 +1,10 @@
-import { formatAmount, parseAmount } from '@agent-escrow/sdk';
+import {
+  FEE_PERCENT,
+  formatAmount,
+  type JobStatusName,
+  PAID_STATUSES,
+  RETURNED_STATUSES,
+} from '@agent-escrow/sdk';
 import { Link } from 'react-router-dom';
 import { type JobRow, loadJobs } from '../lib/data.ts';
 import { useAsync } from '../lib/useAsync.ts';
@@ -6,15 +12,11 @@ import { Hero } from './landing/Hero.tsx';
 import { Problem } from './landing/Problem.tsx';
 import { Protocol } from './landing/Protocol.tsx';
 import { Reputation } from './landing/Reputation.tsx';
-import '../styles/landing.css';
 
-const PAID = new Set(['Completed', 'Claimed']);
-const REFUNDED = new Set(['Rejected', 'Expired', 'Refunded']);
+function total(jobs: JobRow[], statuses: JobStatusName[]): string {
+  const settled = jobs.filter((job) => statuses.includes(job.view.status));
 
-function total(jobs: JobRow[], statuses: Set<string>): string {
-  const amounts = jobs.filter((job) => statuses.has(job.view.status)).map((job) => job.view.amount);
-
-  return formatAmount(amounts.reduce((sum, amount) => sum + parseAmount(amount), 0n));
+  return formatAmount(settled.reduce((sum, job) => sum + job.record.amount, 0n));
 }
 
 /** Real numbers from the program accounts. Hidden until there is something to show. */
@@ -30,10 +32,10 @@ function LiveStats() {
         <strong>{jobs.length}</strong> jobs created
       </span>
       <span>
-        <strong>{total(jobs, PAID)} USDC</strong> released to sellers
+        <strong>{total(jobs, PAID_STATUSES)} USDC</strong> released to sellers
       </span>
       <span>
-        <strong>{total(jobs, REFUNDED)} USDC</strong> returned to buyers
+        <strong>{total(jobs, RETURNED_STATUSES)} USDC</strong> returned to buyers
       </span>
       <Link to="/jobs">See them all →</Link>
     </section>
@@ -54,7 +56,7 @@ function Closing() {
             </p>
           </div>
           <p className="price">
-            0.25% <span>per release</span>
+            {FEE_PERCENT} <span>per release</span>
           </p>
         </div>
       </section>

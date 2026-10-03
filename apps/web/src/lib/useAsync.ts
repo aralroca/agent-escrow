@@ -1,4 +1,4 @@
-import { describeError } from '@agent-escrow/sdk';
+import { describeError, isRateLimited } from '@agent-escrow/sdk';
 import { useEffect, useState } from 'react';
 
 export type Async<T> = { data?: T; error?: string; loading: boolean };
@@ -7,15 +7,21 @@ const RATE_LIMITED =
   'The public Solana RPC is rate limiting this browser. Wait a few seconds and reload.';
 
 function readableError(error: unknown): string {
-  const message = describeError(error);
-
-  return message.includes('429') ? RATE_LIMITED : message;
+  return isRateLimited(error) ? RATE_LIMITED : describeError(error);
 }
 
-/**
- * Loads data once per `key`, ignoring responses that arrive after the key changed.
- * Data already on screen stays there while a newer version loads.
- */
+/** While a newer version loads, what is already on screen stays there. */
+function reloading<T>(previous: Async<T>): Async<T> {
+  return { data: previous.data, loading: previous.data === undefined };
+}
+
+/** A failed refresh keeps the data on screen instead of replacing it with an error. */
+function failed<T>(error: unknown) {
+  return (previous: Async<T>): Async<T> =>
+    previous.data === undefined ? { error: readableError(error), loading: false } : previous;
+}
+
+/** Loads data once per `key`, ignoring responses that arrive after the key changed. */
 export function useAsync<T>(load: () => Promise<T>, key: string): Async<T> {
   const [state, setState] = useState<Async<T>>({ loading: true });
 
@@ -23,16 +29,12 @@ export function useAsync<T>(load: () => Promise<T>, key: string): Async<T> {
   useEffect(
     function loadForKey() {
       let current = true;
-      const whileCurrent = (update: (previous: Async<T>) => Async<T>) =>
-        current && setState(update);
-      // A failed refresh keeps what is already on screen instead of replacing it with an error.
-      const fail = (error: unknown) => (previous: Async<T>) =>
-        previous.data === undefined ? { error: readableError(error), loading: false } : previous;
+      const update = (next: (previous: Async<T>) => Async<T>) => current && setState(next);
 
-      whileCurrent((previous) => ({ data: previous.data, loading: previous.data === undefined }));
+      update(reloading);
       load()
-        .then((data) => whileCurrent(() => ({ data, loading: false })))
-        .catch((error) => whileCurrent(fail(error)));
+        .then((data) => update(() => ({ data, loading: false })))
+        .catch((error) => update(failed(error)));
 
       return () => {
         current = false;

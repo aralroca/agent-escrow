@@ -61,7 +61,7 @@
 }
 
 .header-links a:hover,
-.header-links a.active {
+.header-links a[aria-current="page"] {
   background: var(--chip);
   color: var(--ink);
 }

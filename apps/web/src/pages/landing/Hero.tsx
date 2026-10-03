@@ -1,7 +1,8 @@
+import { FEE_PERCENT } from '@agent-escrow/sdk';
 import { Link } from 'react-router-dom';
 import { Arrow, CheckCircle, CrossCircle, Tick } from '../../components/Icons.tsx';
 
-const PROOFS = ['No pay for failed work', 'Non-custodial', '0.25% fee, only on paid jobs'];
+const PROOFS = ['No pay for failed work', 'Non-custodial', `${FEE_PERCENT} fee, only on paid jobs`];
 const PASSED_CHECKS = [
   '200 / 200 items returned',
   "Output matches the buyer's JSON schema",

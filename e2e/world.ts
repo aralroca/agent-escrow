@@ -1,6 +1,13 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { connect, findTokenAccount, sendInstructions, USDC_DEVNET_MINT } from '@agent-escrow/sdk';
+import {
+  connect,
+  findTokenAccount,
+  nowSeconds,
+  sendInstructions,
+  USDC_DEVNET_MINT,
+  usdcBalance,
+} from '@agent-escrow/sdk';
 import {
   type Address,
   airdropFactory,
@@ -10,12 +17,11 @@ import {
   lamports,
 } from '@solana/kit';
 import {
-  fetchMaybeToken,
   getCreateAssociatedTokenIdempotentInstructionAsync,
   getMintToInstruction,
 } from '@solana-program/token';
+import { RPC_URL } from './validator.ts';
 
-export const RPC_URL = 'http://127.0.0.1:8899';
 export const connection = connect(RPC_URL);
 export const USDC = 1_000_000n;
 
@@ -55,14 +61,9 @@ export async function mintUsdc(owner: Address, amount: bigint) {
   await sendInstructions(connection, payer, instructions);
 }
 
-export async function balanceOf(owner: Address): Promise<bigint> {
-  const token = await fetchMaybeToken(
-    connection.rpc,
-    await findTokenAccount(owner, USDC_DEVNET_MINT),
-  );
+export const balanceOf = (owner: Address) => usdcBalance(connection.rpc, owner);
 
-  return token.exists ? token.data.amount : 0n;
-}
+export const inOneHour = () => nowSeconds() + 3_600n;
 
 /** Serves in-memory JSON files over HTTP, the way an agent would host a spec or a deliverable. */
 export async function serveFiles() {

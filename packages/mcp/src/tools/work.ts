@@ -1,29 +1,24 @@
-import { fetchVerified, parseSpec, type Spec, toHex } from '@agent-escrow/checks';
+import type { Spec } from '@agent-escrow/checks';
 import {
   acceptJob,
   claimTimeout,
   evaluateJob,
+  fetchJobSpec,
   getJob,
   type JobRecord,
-  JobStatus,
   refundJob,
   submitResult,
 } from '@agent-escrow/sdk';
 import type { Address } from '@solana/kit';
 import * as z from 'zod/v4';
-import type { Context } from '../context.ts';
+import { resolveUri } from '../hosting.ts';
 import { defineTool, jobSchema } from '../tool.ts';
 
 /** The spec a seller is about to commit to, refused unless it matches the on-chain hash. */
 async function committedSpec(job: JobRecord): Promise<Spec> {
-  const bytes = await fetchVerified(job.specUri, toHex(job.specHash as Uint8Array)).catch(() => {
-    throw new Error(
-      `Refused: the spec at ${job.specUri} is unreachable or does not match the hash committed ` +
-        'on-chain, so no delivery could ever pass. Do not accept this job.',
-    );
+  return fetchJobSpec(job).catch((cause) => {
+    throw new Error('Refused: no delivery could pass this job. Do not accept it', { cause });
   });
-
-  return parseSpec(bytes);
 }
 
 export const acceptJobTool = defineTool({
@@ -41,39 +36,20 @@ export const acceptJobTool = defineTool({
   },
 });
 
-const submitInput = z.object({
-  job: jobSchema,
-  result: z
-    .unknown()
-    .optional()
-    .describe('The deliverable as JSON. It is published at a public URL'),
-  result_uri: z
-    .string()
-    .url()
-    .optional()
-    .describe('Public URL of the deliverable, instead of `result`'),
-});
-
-async function resolveResultUri(
-  context: Context,
-  args: z.infer<typeof submitInput>,
-): Promise<string> {
-  if (args.result_uri) return args.result_uri;
-  if (args.result === undefined)
-    throw new Error('Provide the deliverable as `result` or `result_uri`.');
-
-  return context.publish('result.json', args.result);
-}
-
 export const submitResultTool = defineTool({
   name: 'submit_result',
   description:
     'As the seller, deliver the work. The deliverable is committed on-chain by hash, so it cannot ' +
     'be changed afterwards, and the evaluator review window starts.',
-  input: submitInput,
-  async run(context, args) {
-    const resultUri = await resolveResultUri(context, args);
-    const receipt = await submitResult(context.connection, context.signer, args.job, resultUri);
+  input: z.object({
+    job: jobSchema,
+    result: z.unknown().optional().describe('The deliverable as JSON. It is published at a URL'),
+    result_uri: z.string().url().optional().describe('Public URL of it, instead of `result`'),
+  }),
+  async run({ connection, signer, publish }, { job, result, result_uri }) {
+    const deliverable = { uri: result_uri, content: result, name: 'result.json', what: 'result' };
+    const resultUri = await resolveUri(publish, deliverable);
+    const receipt = await submitResult(connection, signer, job, resultUri);
 
     return { ...receipt, resultUri };
   },
@@ -93,27 +69,17 @@ export const evaluateJobTool = defineTool({
   },
 });
 
-type Settlement = { settle: typeof refundJob; outcome: string };
-
-/** Which timed exit, if any, is open to `who` on this job right now. */
-function timedExit(job: JobRecord, who: Address, now: bigint): Settlement | string {
-  const refund = { settle: refundJob, outcome: 'refunded to the client' };
-  const reviewEnds = job.submittedAt + job.reviewWindow;
-  const isClient = who === job.client;
-
-  if (isClient && job.status === JobStatus.Funded) return refund;
-  if (isClient && job.status === JobStatus.Accepted) {
-    return now > job.deadline
-      ? refund
-      : 'The seller still has time to deliver before the deadline.';
-  }
-  if (who === job.provider && job.status === JobStatus.Submitted) {
-    return now > reviewEnds
-      ? { settle: claimTimeout, outcome: 'paid to the seller after the review window' }
-      : 'The evaluator still has time to judge the delivery.';
+/**
+ * Which timed exit belongs to `who`. Whether it is open yet is the program's call: it knows the
+ * chain clock, and its refusal already says why ("the review window is still open").
+ */
+function timedExit(job: JobRecord, who: Address) {
+  if (who === job.client) return { settle: refundJob, outcome: 'refunded to the client' };
+  if (who === job.provider) {
+    return { settle: claimTimeout, outcome: 'paid to the seller after the review window' };
   }
 
-  return `Nothing to settle: the job is ${JobStatus[job.status]} and this agent has no timed exit on it.`;
+  throw new Error('Only the buyer or the seller of a job can settle it.');
 }
 
 export const settleExpiredTool = defineTool({
@@ -125,11 +91,9 @@ export const settleExpiredTool = defineTool({
   input: z.object({ job: jobSchema }),
   async run({ connection, signer }, { job }) {
     const record = await getJob(connection.rpc, job);
-    const exit = timedExit(record, signer.address, BigInt(Math.floor(Date.now() / 1000)));
+    const { settle, outcome } = timedExit(record, signer.address);
+    const receipt = await settle(connection, signer, record);
 
-    if (typeof exit === 'string') throw new Error(exit);
-    const receipt = await exit.settle(connection, signer, job);
-
-    return { ...receipt, outcome: exit.outcome };
+    return { ...receipt, outcome };
   },
 });

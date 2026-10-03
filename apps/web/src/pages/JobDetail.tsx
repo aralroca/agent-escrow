@@ -1,5 +1,5 @@
 import type { JobView } from '@agent-escrow/sdk';
-import { formatAmount, parseAmount, protocolFee } from '@agent-escrow/sdk';
+import { FEE_PERCENT, formatAmount, protocolFee } from '@agent-escrow/sdk';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { AddressLink, Loaded, StatusPill } from '../components/ui.tsx';
@@ -10,26 +10,11 @@ import { useAsync } from '../lib/useAsync.ts';
 import { JobTitle } from './Jobs.tsx';
 import { Stepper } from './job/Stepper.tsx';
 import { VerificationCard } from './job/VerificationCard.tsx';
-import '../styles/app.css';
 
 const REFRESH_MS = 12_000;
-function useTick(intervalMs: number): number {
-  const [tick, setTick] = useState(0);
 
-  useEffect(
-    function startTicking() {
-      const id = setInterval(() => setTick((value) => value + 1), intervalMs);
-
-      return () => clearInterval(id);
-    },
-    [intervalMs],
-  );
-
-  return tick;
-}
-
-function Money({ view }: { view: JobView }) {
-  const amount = parseAmount(view.amount);
+function Money({ job: { record, view } }: { job: JobRow }) {
+  const { amount } = record;
 
   return (
     <section className="card stack money">
@@ -43,7 +28,7 @@ function Money({ view }: { view: JobView }) {
           <dd>{formatAmount(amount - protocolFee(amount))}</dd>
         </div>
         <div>
-          <dt>Protocol fee (0.25%)</dt>
+          <dt>Protocol fee ({FEE_PERCENT})</dt>
           <dd>{view.fee}</dd>
         </div>
         <div>
@@ -83,10 +68,7 @@ function Parties({ view }: { view: JobView }) {
 }
 
 function Activity({ job }: { job: JobRow }) {
-  const activity = useAsync(
-    () => loadActivity(job.view.address),
-    `${job.view.address}:${job.view.status}`,
-  );
+  const activity = useAsync(() => loadActivity(job.view), `${job.view.address}:${job.view.status}`);
 
   return (
     <section className="card stack">
@@ -145,7 +127,7 @@ function JobBody({ job }: { job: JobRow }) {
           <Activity job={job} />
         </div>
         <div className="stack job-side">
-          <Money view={view} />
+          <Money job={job} />
           <Parties view={view} />
         </div>
       </div>
@@ -153,11 +135,27 @@ function JobBody({ job }: { job: JobRow }) {
   );
 }
 
-function JobLoader({ address }: { address: string }) {
-  const tick = useTick(REFRESH_MS);
+/** Refetches an open job every few seconds; settled jobs and hidden tabs cost no requests. */
+function useJob(address: string) {
+  const [tick, setTick] = useState(0);
   const job = useAsync(() => loadJob(address), `${address}:${tick}`);
+  const settled = Boolean(job.data?.view.settledAt);
 
-  return <Loaded state={job}>{(row) => <JobBody job={row} />}</Loaded>;
+  useEffect(
+    function pollWhileOpen() {
+      const refresh = () => document.hidden || setTick((value) => value + 1);
+      const id = settled ? undefined : setInterval(refresh, REFRESH_MS);
+
+      return () => clearInterval(id);
+    },
+    [settled],
+  );
+
+  return job;
+}
+
+function JobLoader({ address }: { address: string }) {
+  return <Loaded state={useJob(address)}>{(row) => <JobBody job={row} />}</Loaded>;
 }
 
 export function JobDetail() {

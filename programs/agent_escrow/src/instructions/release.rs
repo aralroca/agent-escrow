@@ -84,7 +84,6 @@ pub fn handle_claim_timeout(ctx: Context<Release>) -> Result<()> {
         job.provider,
         ErrorCode::Unauthorized
     );
-    require!(job.status == JobStatus::Submitted, ErrorCode::InvalidStatus);
     require!(
         Clock::get()?.unix_timestamp > review_ends,
         ErrorCode::ReviewWindowOpen
@@ -93,19 +92,15 @@ pub fn handle_claim_timeout(ctx: Context<Release>) -> Result<()> {
     release(ctx, JobStatus::Claimed)
 }
 
-fn protocol_fee(amount: u64) -> Result<u64> {
-    let fee = amount
+fn protocol_fee(amount: u64) -> Option<u64> {
+    amount
         .checked_mul(FEE_BPS)
-        .ok_or(ErrorCode::Overflow)?
-        .checked_div(BPS_DENOMINATOR)
-        .ok_or(ErrorCode::Overflow)?;
-
-    Ok(fee)
+        .map(|scaled| scaled / BPS_DENOMINATOR)
 }
 
 fn release(ctx: Context<Release>, status: JobStatus) -> Result<()> {
     let accounts = ctx.accounts;
-    let fee = protocol_fee(accounts.job.amount)?;
+    let fee = protocol_fee(accounts.job.amount).ok_or(ErrorCode::Overflow)?;
     // Paying out the whole balance keeps the vault closable even if someone sent it extra tokens.
     let payout = accounts
         .vault
@@ -124,7 +119,9 @@ fn release(ctx: Context<Release>, status: JobStatus) -> Result<()> {
         ErrorCode::InvalidStatus
     );
     vault.pay(&accounts.provider_token, payout)?;
-    vault.pay(&accounts.treasury_token, fee)?;
+    if fee > 0 {
+        vault.pay(&accounts.treasury_token, fee)?;
+    }
     vault.close(&accounts.client)?;
 
     accounts.provider_profile.jobs_completed += 1;
@@ -132,8 +129,6 @@ fn release(ctx: Context<Release>, status: JobStatus) -> Result<()> {
         .provider_profile
         .volume_settled
         .saturating_add(accounts.job.amount);
-    accounts.job.status = status;
-    accounts.job.settled_at = Clock::get()?.unix_timestamp;
 
-    Ok(())
+    accounts.job.settle(status)
 }

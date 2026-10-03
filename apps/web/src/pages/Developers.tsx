@@ -12,7 +12,6 @@ import {
   SPEC_EXAMPLE,
   TOOLS,
 } from './developers-content.ts';
-import '../styles/app.css';
 
 function Table({ head, rows }: { head: string[]; rows: string[][] }) {
   return (

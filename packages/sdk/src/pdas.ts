@@ -3,17 +3,12 @@ import {
   getAddressEncoder,
   getProgramDerivedAddress,
   getU64Encoder,
-  getUtf8Encoder,
 } from '@solana/kit';
 import { findAssociatedTokenPda, TOKEN_PROGRAM_ADDRESS } from '@solana-program/token';
-import { AGENT_ESCROW_PROGRAM_ADDRESS, findProfilePda } from './generated/index.ts';
+import { AGENT_ESCROW_PROGRAM_ADDRESS, findProfilePda, JOB_SEED } from './generated/index.ts';
 
 export async function findJobPda(client: Address, jobId: bigint): Promise<Address> {
-  const seeds = [
-    getUtf8Encoder().encode('job'),
-    getAddressEncoder().encode(client),
-    getU64Encoder().encode(jobId),
-  ];
+  const seeds = [JOB_SEED, getAddressEncoder().encode(client), getU64Encoder().encode(jobId)];
   const [job] = await getProgramDerivedAddress({
     programAddress: AGENT_ESCROW_PROGRAM_ADDRESS,
     seeds,

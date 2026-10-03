@@ -69,12 +69,6 @@ export type Job = {
   mint: Address;
   jobId: bigint;
   amount: bigint;
-  /** sha256 of the acceptance spec, fixed when the job is funded. */
-  specHash: ReadonlyUint8Array;
-  specUri: string;
-  /** sha256 of the deliverable, set on submit. */
-  resultHash: ReadonlyUint8Array;
-  resultUri: string;
   /** Unix time by which the provider must submit. */
   deadline: bigint;
   /** Seconds the evaluator has to judge after a submission. */
@@ -85,6 +79,12 @@ export type Job = {
   status: JobStatus;
   bump: number;
   vaultBump: number;
+  /** sha256 of the acceptance spec, fixed when the job is funded. */
+  specHash: ReadonlyUint8Array;
+  /** sha256 of the deliverable, set on submit. */
+  resultHash: ReadonlyUint8Array;
+  specUri: string;
+  resultUri: string;
 };
 
 export type JobArgs = {
@@ -94,12 +94,6 @@ export type JobArgs = {
   mint: Address;
   jobId: number | bigint;
   amount: number | bigint;
-  /** sha256 of the acceptance spec, fixed when the job is funded. */
-  specHash: ReadonlyUint8Array;
-  specUri: string;
-  /** sha256 of the deliverable, set on submit. */
-  resultHash: ReadonlyUint8Array;
-  resultUri: string;
   /** Unix time by which the provider must submit. */
   deadline: number | bigint;
   /** Seconds the evaluator has to judge after a submission. */
@@ -110,6 +104,12 @@ export type JobArgs = {
   status: JobStatusArgs;
   bump: number;
   vaultBump: number;
+  /** sha256 of the acceptance spec, fixed when the job is funded. */
+  specHash: ReadonlyUint8Array;
+  /** sha256 of the deliverable, set on submit. */
+  resultHash: ReadonlyUint8Array;
+  specUri: string;
+  resultUri: string;
 };
 
 /** Gets the encoder for {@link JobArgs} account data. */
@@ -123,10 +123,6 @@ export function getJobEncoder(): Encoder<JobArgs> {
       ["mint", getAddressEncoder()],
       ["jobId", getU64Encoder()],
       ["amount", getU64Encoder()],
-      ["specHash", fixEncoderSize(getBytesEncoder(), 32)],
-      ["specUri", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-      ["resultHash", fixEncoderSize(getBytesEncoder(), 32)],
-      ["resultUri", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
       ["deadline", getI64Encoder()],
       ["reviewWindow", getI64Encoder()],
       ["createdAt", getI64Encoder()],
@@ -135,6 +131,10 @@ export function getJobEncoder(): Encoder<JobArgs> {
       ["status", getJobStatusEncoder()],
       ["bump", getU8Encoder()],
       ["vaultBump", getU8Encoder()],
+      ["specHash", fixEncoderSize(getBytesEncoder(), 32)],
+      ["resultHash", fixEncoderSize(getBytesEncoder(), 32)],
+      ["specUri", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ["resultUri", addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
     ]),
     (value) => ({ ...value, discriminator: JOB_DISCRIMINATOR }),
   );
@@ -150,10 +150,6 @@ export function getJobDecoder(): Decoder<Job> {
     ["mint", getAddressDecoder()],
     ["jobId", getU64Decoder()],
     ["amount", getU64Decoder()],
-    ["specHash", fixDecoderSize(getBytesDecoder(), 32)],
-    ["specUri", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-    ["resultHash", fixDecoderSize(getBytesDecoder(), 32)],
-    ["resultUri", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
     ["deadline", getI64Decoder()],
     ["reviewWindow", getI64Decoder()],
     ["createdAt", getI64Decoder()],
@@ -162,6 +158,10 @@ export function getJobDecoder(): Decoder<Job> {
     ["status", getJobStatusDecoder()],
     ["bump", getU8Decoder()],
     ["vaultBump", getU8Decoder()],
+    ["specHash", fixDecoderSize(getBytesDecoder(), 32)],
+    ["resultHash", fixDecoderSize(getBytesDecoder(), 32)],
+    ["specUri", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ["resultUri", addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
   ]);
 }
 

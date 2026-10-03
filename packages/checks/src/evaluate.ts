@@ -23,13 +23,18 @@ export async function runChecks(spec: Spec, bytes: Uint8Array): Promise<Verdict>
 const FETCH_TIMEOUT_MS = 30_000;
 const MAX_BYTES = 5 * 1024 * 1024;
 
+function httpOnly(uri: string): string {
+  if (!/^https?:\/\//i.test(uri)) throw new Error(`Only http(s) URLs are supported: ${uri}`);
+
+  return uri;
+}
+
 /**
  * Downloads a file chosen by a counterparty. Only http(s), bounded in time and size, so a hostile
  * URL cannot hang or exhaust whoever runs the acceptance test.
  */
 export async function fetchBytes(uri: string): Promise<Uint8Array> {
-  if (!/^https?:\/\//i.test(uri)) throw new Error(`Only http(s) URLs are supported: ${uri}`);
-  const response = await fetch(uri, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+  const response = await fetch(httpOnly(uri), { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
   const bytes = new Uint8Array(await response.arrayBuffer());
 
   if (!response.ok) throw new Error(`Could not fetch ${uri}: HTTP ${response.status}`);
@@ -62,10 +67,13 @@ function integrityFailure(error: unknown): Verdict {
  * a deliverable that cannot be verified fails (the seller did not deliver what it committed).
  */
 export async function evaluate(commitment: Commitment): Promise<Evaluation> {
+  // Both downloads start together; a failed deliverable is judged after the spec, not before.
+  const deliverable = fetchVerified(commitment.resultUri, commitment.resultHash).catch(
+    (error: unknown) => integrityFailure(error),
+  );
   const spec = parseSpec(await fetchVerified(commitment.specUri, commitment.specHash));
-  const verdict = await fetchVerified(commitment.resultUri, commitment.resultHash)
-    .then((bytes) => runChecks(spec, bytes))
-    .catch(integrityFailure);
+  const outcome = await deliverable;
+  const verdict = outcome instanceof Uint8Array ? await runChecks(spec, outcome) : outcome;
 
   return { ...verdict, spec };
 }
