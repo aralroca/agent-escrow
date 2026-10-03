@@ -12,6 +12,7 @@ import { Hero } from './landing/Hero.tsx';
 import { Problem } from './landing/Problem.tsx';
 import { Protocol } from './landing/Protocol.tsx';
 import { Reputation } from './landing/Reputation.tsx';
+import { Video } from './landing/Video.tsx';
 
 function total(jobs: JobRow[], statuses: JobStatusName[]): string {
   const settled = jobs.filter((job) => statuses.includes(job.view.status));
@@ -83,6 +84,7 @@ export function Landing() {
     <>
       <Hero />
       <LiveStats />
+      <Video />
       <Problem />
       <Protocol />
       <Reputation />

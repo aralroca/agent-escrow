@@ -17,6 +17,14 @@ test.describe('landing', () => {
     await expect(page.getByRole('heading', { name: 'Good work always gets paid.' })).toBeVisible();
   });
 
+  test('plays the product video only when asked', async ({ page }) => {
+    await page.goto('');
+
+    await expect(page.locator('.video iframe')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Play the video' }).click();
+    await expect(page.locator('.video iframe')).toHaveAttribute('src', /youtube-nocookie\.com/);
+  });
+
   test('shows live numbers read from the chain, not invented ones', async ({ page }) => {
     await page.goto('');
 
