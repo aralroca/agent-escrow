@@ -10,6 +10,7 @@ import {
   getAgent,
   getJob,
   JobStatus,
+  listActivity,
   listAgents,
   listJobs,
   refundJob,
@@ -98,6 +99,21 @@ describe('job lifecycle through the SDK', () => {
     expect(judgement.verdict.results.find((result) => result.type === 'count')?.passed).toBe(false);
     expect(settled.status).toBe(JobStatus.Rejected);
     expect(await balanceOf(client.address, mint)).toBe(before);
+  });
+
+  it('lists the transactions of a job, labelled by instruction', async () => {
+    const job = await submittedJob('activity.json', products);
+
+    await evaluateJob(connection, evaluator, job);
+    const activity = await listActivity(connection.rpc, job);
+
+    expect(activity.map((entry) => entry.instruction)).toEqual([
+      'complete',
+      'submit',
+      'accept',
+      'create_job',
+    ]);
+    expect(activity.every((entry) => !entry.failed && entry.time)).toBe(true);
   });
 
   it('lets anyone reproduce the verdict from the on-chain commitments', async () => {

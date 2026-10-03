@@ -85,7 +85,11 @@ export async function serveFiles() {
   const server = createServer((request, response) => {
     const body = files.get(request.url ?? '');
 
-    response.writeHead(body === undefined ? 404 : 200, { 'content-type': 'application/json' });
+    // Browsers verifying a job fetch these files cross-origin, like they would a gist.
+    response.writeHead(body === undefined ? 404 : 200, {
+      'content-type': 'application/json',
+      'access-control-allow-origin': '*',
+    });
     response.end(body);
   });
 

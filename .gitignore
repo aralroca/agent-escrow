@@ -10,3 +10,6 @@ test-ledger
 .env.*
 .claude
 keys
+test-results
+playwright-report
+.vitest

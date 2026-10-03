@@ -38,7 +38,7 @@
     "@modelcontextprotocol/server": "^2.3.0",
     "@solana-program/token": "^0.17.0",
     "@solana/kit": "^8.4.0",
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.28.2",
     "zod": "^4.6.5"
   }
 }

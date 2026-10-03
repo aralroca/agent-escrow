@@ -1,0 +1,440 @@
+.page {
+  background: var(--surface);
+  min-height: 70vh;
+}
+
+.page-inner {
+  gap: 24px;
+  padding-block: 48px 80px;
+}
+
+.page-head {
+  gap: 12px;
+  max-width: 760px;
+}
+
+.page-title {
+  font-size: clamp(30px, 4vw, 44px);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  font-weight: 600;
+}
+
+.small {
+  font-size: 13px;
+}
+
+.card h2,
+.doc-section > h2 {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.doc-section > h2 {
+  font-size: 26px;
+  letter-spacing: -0.03em;
+}
+
+.segmented {
+  margin: 0;
+  border: 0;
+  min-inline-size: auto;
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #e9ebef;
+}
+
+.page .card .segmented {
+  background: var(--chip);
+}
+
+.segmented button {
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #3b414d;
+  font: 500 14px var(--sans);
+  cursor: pointer;
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--ink);
+  color: #fff;
+}
+
+.row-title {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.policy {
+  gap: 20px 28px;
+  align-items: flex-end;
+}
+
+.policy .code {
+  flex: 1 1 280px;
+  padding: 14px 16px;
+}
+
+.policy-field {
+  gap: 10px;
+}
+
+.policy-field > span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.agent-cell {
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+
+.agent-cell .stack {
+  gap: 2px;
+}
+
+.agent-cell a {
+  font-size: 12px;
+  color: var(--subtle);
+}
+
+.job {
+  gap: 20px;
+}
+
+.job-head {
+  gap: 10px;
+}
+
+.job-pills {
+  gap: 8px;
+}
+
+.job-pills .pill {
+  background: #fff;
+  border: 1px solid var(--line);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.job-pills .pill-good,
+.job-pills .pill-bad,
+.job-pills .pill-warn,
+.job-pills .pill-accent {
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.job-pills .pill-good {
+  background: var(--good-bg);
+}
+
+.job-pills .pill-bad {
+  background: var(--bad-bg);
+}
+
+.job-pills .pill-warn {
+  background: var(--warn-bg);
+}
+
+.job-pills .pill-accent {
+  background: var(--accent-soft);
+}
+
+.stepper {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 0;
+  list-style: none;
+}
+
+.stepper li {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 6px solid var(--line);
+  border-radius: 3px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.stepper code {
+  font: 500 13px var(--mono);
+}
+
+.stepper .step-done {
+  border-color: var(--accent);
+  color: var(--subtle);
+}
+
+.stepper .step-done code {
+  color: var(--ink);
+}
+
+.job-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.job-main {
+  flex: 2 1 460px;
+  min-width: 0;
+  gap: 20px;
+}
+
+.job-side {
+  flex: 1 1 300px;
+  min-width: 0;
+  gap: 20px;
+}
+
+.job .card {
+  gap: 16px;
+}
+
+.card-head {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.btn:disabled {
+  background: var(--line-strong);
+  color: var(--subtle);
+  cursor: not-allowed;
+}
+
+.checks {
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.check-row .stack {
+  flex: 1;
+  min-width: 0;
+  gap: 3px;
+  font-size: 15px;
+}
+
+.check-row .stack span {
+  font-size: 13px;
+  color: var(--subtle);
+  overflow-wrap: anywhere;
+}
+
+.check-row code {
+  font: 12px var(--mono);
+  color: var(--subtle);
+}
+
+.check-row svg {
+  flex: none;
+}
+
+.icon-good {
+  color: var(--good);
+}
+
+.icon-bad {
+  color: var(--bad);
+}
+
+.icon-pending {
+  color: #9aa0ab;
+}
+
+.verify-summary {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.activity {
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity li {
+  gap: 12px;
+  padding-block: 12px;
+  border-bottom: 1px solid #f0f1f4;
+  font-size: 14px;
+}
+
+.activity li:last-child {
+  border-bottom: 0;
+}
+
+.activity a {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--subtle);
+}
+
+.activity code {
+  font: 500 13px var(--mono);
+}
+
+.money {
+  background: var(--ink);
+  color: #fff;
+}
+
+.money > span,
+.money dt {
+  font-size: 13px;
+  color: var(--on-ink);
+}
+
+.money-amount {
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+
+.money-amount span {
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--on-ink);
+}
+
+.money dl {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--ink-3);
+  font-size: 14px;
+}
+
+.money dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.money dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.party {
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 15px;
+}
+
+.party span {
+  color: var(--subtle);
+}
+
+.doc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.doc-card {
+  gap: 16px;
+  min-width: 0;
+  padding: 28px;
+}
+
+.doc-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+.pill-dark {
+  background: var(--ink);
+  color: #fff;
+}
+
+.doc-section {
+  gap: 16px;
+  padding-top: 24px;
+}
+
+.doc-section .lead {
+  max-width: 760px;
+}
+
+.table-bordered {
+  border: 1px solid var(--line);
+}
+
+.page code {
+  font-family: var(--mono);
+  font-size: 0.92em;
+}
+
+.prompt {
+  gap: 12px;
+  margin: 0;
+  padding: 28px;
+}
+
+.prompt blockquote {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.entries {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 16px;
+  margin: 0;
+}
+
+.entries .card {
+  gap: 8px;
+}
+
+.entries dt {
+  font-weight: 600;
+  font-size: 17px;
+}
+
+.entries dd {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--muted);
+}

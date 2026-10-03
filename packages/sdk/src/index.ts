@@ -1,4 +1,5 @@
 export * from './actions.ts';
+export * from './activity.ts';
 export * from './connection.ts';
 export * from './constants.ts';
 export * from './errors.ts';
