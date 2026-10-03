@@ -21,10 +21,10 @@
 
 <p align="center">
   <a href="https://aralroca.github.io/agent-escrow/">
-    <img src="docs/media/promo.gif" alt="A real devnet job drawn as its sequence diagram: the buyer agent locks 5 USDC, the seller agent accepts and delivers, the test passes and the seller is paid" width="880">
+    <img src="docs/media/promo.gif" alt="A real devnet job drawn as its sequence diagram: the buyer agent locks 2 USDC, the seller agent accepts and delivers, the test passes and the seller is paid" width="880">
   </a>
   <br>
-  <sub>▶ <a href="docs/media/promo.mp4">Watch the 2-minute video</a>. Recorded from the real product on Solana devnet: every arrow is a real transaction (jobs <a href="https://aralroca.github.io/agent-escrow/#/jobs/H5vYfc8ZURcqXcCopaxKdeNNDEiXFN1qJSmhFj74oefi">paid</a> and <a href="https://aralroca.github.io/agent-escrow/#/jobs/BEbRrbXe4wFrcnLKzn7HcFP35kH6AUusMHnRZQWRhfq1">rejected</a>). Re-create it with <code>pnpm promo</code> on a local validator; the devnet take needs funded demo wallets and a GitHub token, see <a href="#recording-the-promo-video">Recording the promo video</a>.</sub>
+  <sub>▶ <a href="docs/media/promo.mp4">Watch the 2-minute video</a>, with sound. Recorded from the real product on Solana devnet: every arrow is a real transaction (jobs <a href="https://aralroca.github.io/agent-escrow/#/jobs/1RgU5n1oahPd5T6vt6zT87pgL4CpdmFyBTjDc8QFZdc">paid</a> and <a href="https://aralroca.github.io/agent-escrow/#/jobs/Fh8SpkS3xJpfqNxiXbQLMuLgzKAU6rZZnaMQq7Pc1Kga">rejected</a>). Re-create it with <code>pnpm promo</code> on a local validator; the devnet take needs funded demo wallets and a GitHub token, see <a href="#recording-the-promo-video">Recording the promo video</a>.</sub>
 </p>
 
 USDC escrow for agent-to-agent work on Solana. A buyer agent locks the payment together with the
@@ -149,13 +149,19 @@ To work on the site with real data, run `pnpm dev:chain` (local validator seeded
 Solana CLI and a built program (`anchor build`): it starts a local validator with fresh wallets,
 so nothing else has to be set up.
 
+The voice-over is optional: set `PIPER_VOICE` to a [Piper](https://github.com/OHF-Voice/piper1-gpl)
+voice model (the published video uses `en_US-ljspeech-high`) and `PIPER` to the `piper` binary if
+it is not on your `PATH`. The lines are in [`narration.ts`](apps/web/promo/narration.ts), and each
+scene lasts what its line lasts. The music is a pad synthesized by `ffmpeg`; `PROMO_MUSIC=file`
+uses your own track instead. Without `PIPER_VOICE` the video is silent.
+
 `PROMO_NETWORK=devnet pnpm promo` records against the deployed program and the public site
 instead. That take makes real devnet transactions, so it also needs:
 
 - `buyer.json` and `seller.json` keypairs in `~/.config/solana/agent-escrow/`, each holding a
   little devnet SOL for fees ([faucet.solana.com](https://faucet.solana.com)).
-- At least 10 devnet USDC in the buyer wallet ([faucet.circle.com](https://faucet.circle.com)):
-  two jobs of 5 USDC, one paid and one refunded.
+- At least 4 devnet USDC in the buyer wallet ([faucet.circle.com](https://faucet.circle.com)):
+  two jobs of 2 USDC, one paid and one refunded.
 - The seller registered as an agent, so the Agents scene has a record to show (`pnpm demo:devnet`
   registers it).
 - `GITHUB_TOKEN` with the `gist` scope, e.g. `GITHUB_TOKEN=$(gh auth token)`: the spec and the

@@ -82,6 +82,11 @@ export const STAGE_CSS = `
   .self { display: flex; align-items: center; gap: 14px; height: 64px; font: 500 28px "Geist Mono", monospace; white-space: nowrap; }
   .chip { padding: 9px 18px; border-radius: 999px; font-size: 23px; background: #173524; color: #86efac; opacity: 0; animation: appear .35s ease forwards; }
   .chip.bad { background: #472320; color: #fca5a5; }
+  .stamp { position: absolute; top: 890px; width: 420px; margin-left: -210px; padding: 8px 0; text-align: center; border-radius: 20px;
+    font-size: 64px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #86efac; border: 6px solid currentColor;
+    z-index: 4; animation: stamp .45s cubic-bezier(.2,1.4,.4,1) forwards; }
+  .stamp.bad { color: #fca5a5; }
+  @keyframes stamp { from { opacity: 0; transform: rotate(-8deg) scale(2.2); } to { opacity: 1; transform: rotate(-8deg) scale(1); } }
   #proof { position: absolute; left: 0; right: 0; bottom: 36px; text-align: center; font-size: 22px; color: #8a909c; }
 
   /* The site, inside a browser window. */
