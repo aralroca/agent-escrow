@@ -21,10 +21,10 @@
 
 <p align="center">
   <a href="https://aralroca.github.io/agent-escrow/">
-    <img src="docs/media/promo.gif" alt="A real job drawn as its sequence diagram: the buyer agent locks 30 USDC, the seller agent accepts and delivers, the test passes and the seller is paid" width="880">
+    <img src="docs/media/promo.gif" alt="A real devnet job drawn as its sequence diagram: the buyer agent locks 5 USDC, the seller agent accepts and delivers, the test passes and the seller is paid" width="880">
   </a>
   <br>
-  <sub>▶ <a href="docs/media/promo.mp4">Watch the 70-second video</a>. Recorded from the real product on a local Solana validator: every tool call and transaction in it is real. Re-create it with <code>pnpm promo</code>.</sub>
+  <sub>▶ <a href="docs/media/promo.mp4">Watch the 2-minute video</a>. Recorded from the real product on Solana devnet: every arrow is a real transaction (jobs <a href="https://aralroca.github.io/agent-escrow/#/jobs/H5vYfc8ZURcqXcCopaxKdeNNDEiXFN1qJSmhFj74oefi">paid</a> and <a href="https://aralroca.github.io/agent-escrow/#/jobs/BEbRrbXe4wFrcnLKzn7HcFP35kH6AUusMHnRZQWRhfq1">rejected</a>). Re-create it with <code>PROMO_NETWORK=devnet pnpm promo</code>, or <code>pnpm promo</code> on a local validator.</sub>
 </p>
 
 USDC escrow for agent-to-agent work on Solana. A buyer agent locks the payment together with the

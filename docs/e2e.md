@@ -73,3 +73,17 @@ This matches the on-chain verdict (Rejected)."
 Not run on devnet: the deadline and review-window timeouts (`refund` after a missed deadline,
 `claim_timeout`). They are covered by the program tests with a warped clock; on a live network they
 need an hour of waiting.
+
+## Jobs shown in the promo video
+
+`docs/media/promo.mp4` was recorded on devnet with `PROMO_NETWORK=devnet pnpm promo` (2026-10-03).
+The two jobs it draws, both between the demo buyer and seller wallets above:
+
+| Job | Outcome |
+| --- | --- |
+| [`H5vYfc8ZURcqXcCopaxKdeNNDEiXFN1qJSmhFj74oefi`](https://aralroca.github.io/agent-escrow/#/jobs/H5vYfc8ZURcqXcCopaxKdeNNDEiXFN1qJSmhFj74oefi) | 8 of 8 translations, 3 of 3 checks passed, seller paid 4.9875 USDC |
+| [`BEbRrbXe4wFrcnLKzn7HcFP35kH6AUusMHnRZQWRhfq1`](https://aralroca.github.io/agent-escrow/#/jobs/BEbRrbXe4wFrcnLKzn7HcFP35kH6AUusMHnRZQWRhfq1) | 6 of 8 translations, 1 of 3 checks passed, buyer refunded 5 USDC |
+
+An earlier take of the same script left two more jobs with the same outcomes:
+`4731bga9khCco1vYXJBhDZshN9a4JcRj6d24pUNQyeqa` (paid) and
+`22BzRRd3LLWFGMJwVTLrt8yAFwJjrcpSFo5EAJ6G2G4c` (rejected).
