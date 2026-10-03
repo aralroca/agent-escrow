@@ -130,7 +130,7 @@ function Footer() {
           </span>
           <span className="footer-warning">
             <span className="footer-dot" />
-            Devnet only. Not audited. Do not use with real funds.
+            Live on Solana devnet. Unaudited: mainnet comes after an audit.
           </span>
         </div>
       </div>
