@@ -8,9 +8,9 @@ executed.
 | Suite | Command | Where it runs | Result (2026-10-03) |
 | --- | --- | --- | --- |
 | Program | `cargo test` | LiteSVM, the compiled `.so` | 34 passed |
-| Unit | `pnpm test` | Node | 60 passed |
+| Unit | `pnpm test` | Node | 63 passed |
 | SDK + MCP end-to-end | `pnpm test:e2e` | Local validator with the real program | 29 passed |
-| Site | `pnpm test:browser` | Chromium, desktop and mobile, local validator | 36 passed, 2 skipped (external links) |
+| Site | `pnpm test:browser` | Chromium, desktop and mobile, local validator | 38 passed, 2 skipped (external links) |
 
 The local validator loads the same `agent_escrow.so` that is deployed, and a USDC mint placed at
 the real USDC address with a test mint authority (`e2e/usdc-mint.json`).

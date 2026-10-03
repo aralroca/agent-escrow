@@ -38,6 +38,22 @@ test.describe('landing', () => {
   });
 });
 
+test.describe('custom RPC', () => {
+  // Same validator, different host name: a different endpoint as far as the page can tell.
+  const custom = '?rpc=http://localhost:8899';
+
+  test('says so when a link chooses the data source, and does not remember it', async ({
+    page,
+  }) => {
+    await page.goto(`${custom}#/jobs`);
+    await expect(page.getByRole('note')).toContainText('read from http://localhost:8899');
+
+    await page.goto('#/jobs');
+    await page.reload();
+    await expect(page.getByRole('note')).toHaveCount(0);
+  });
+});
+
 test.describe('main menu', () => {
   const current = '.header-links a[aria-current="page"]';
 

@@ -7,7 +7,7 @@ import {
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AddressLink, Loaded, Page, Segmented, StatusPill } from '../components/ui.tsx';
-import { type JobRow, loadAgents, loadJobs, loadSpec, namesOf } from '../lib/data.ts';
+import { type JobRow, loadAgents, loadJobs, loadSpec, namesOf, specKey } from '../lib/data.ts';
 import { relativeTime, shortAddress } from '../lib/format.ts';
 import { useAsync } from '../lib/useAsync.ts';
 
@@ -24,7 +24,7 @@ const FILTER_OPTIONS = (Object.keys(FILTERS) as Filter[]).map((name) => [name, n
 
 /** The job title lives in its spec, so it arrives after the row. */
 export function JobTitle({ job }: { job: JobRow }) {
-  const spec = useAsync(() => loadSpec(job.record), job.view.specUri);
+  const spec = useAsync(() => loadSpec(job.record), specKey(job.record));
 
   return <>{spec.data?.title ?? `Job ${shortAddress(job.view.address)}`}</>;
 }

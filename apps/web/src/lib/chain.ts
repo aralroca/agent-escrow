@@ -1,25 +1,18 @@
 import { connect, DEVNET_RPC } from '@agent-escrow/sdk';
 
-const STORAGE_KEY = 'agent-escrow:rpc';
+const DEFAULT_RPC: string = import.meta.env.VITE_RPC_URL ?? DEVNET_RPC;
 
 /**
- * The public devnet RPC is rate limited. Opening the site once with `?rpc=<url>` stores another
- * endpoint in this browser; `?rpc=` with an empty value goes back to the default.
+ * The public devnet RPC is rate limited, so `?rpc=<url>` reads from another endpoint. It applies
+ * only while it is in the address and is never stored: whoever controls the endpoint controls
+ * what this page shows, so one link must not be able to switch it for later visits.
  */
-function rpcOverride(): string | undefined {
-  const requested = new URLSearchParams(window.location.search).get('rpc');
+const requestedRpc = new URLSearchParams(window.location.search).get('rpc');
 
-  try {
-    if (requested) localStorage.setItem(STORAGE_KEY, requested);
-    if (requested === '') localStorage.removeItem(STORAGE_KEY);
+export const rpcUrl = requestedRpc || DEFAULT_RPC;
 
-    return localStorage.getItem(STORAGE_KEY) ?? undefined;
-  } catch {
-    return requested || undefined;
-  }
-}
-
-export const rpcUrl: string = rpcOverride() ?? import.meta.env.VITE_RPC_URL ?? DEVNET_RPC;
+/** True when the data on screen comes from an endpoint named in the link. */
+export const usesCustomRpc = rpcUrl !== DEFAULT_RPC;
 
 export const { rpc } = connect(rpcUrl);
 

@@ -42,7 +42,7 @@ pub struct ReturnFunds<'info> {
     pub token_program: Interface<'info, TokenInterface>,
 }
 
-/// The evaluator rejects the submission.
+/// The evaluator rejects the submission, while the review window is open.
 pub fn handle_reject(ctx: Context<ReturnFunds>) -> Result<()> {
     let job = &ctx.accounts.job;
 
@@ -52,6 +52,12 @@ pub fn handle_reject(ctx: Context<ReturnFunds>) -> Result<()> {
         ErrorCode::Unauthorized
     );
     require!(job.status == JobStatus::Submitted, ErrorCode::InvalidStatus);
+    // Past the window only an approval or the provider's claim can settle, so a silent
+    // evaluator cannot wait and then race the provider's claim with a rejection.
+    require!(
+        Clock::get()?.unix_timestamp <= job.review_ends()?,
+        ErrorCode::ReviewWindowClosed
+    );
     profile(ctx.accounts)?.jobs_rejected += 1;
 
     return_funds(ctx, JobStatus::Rejected)

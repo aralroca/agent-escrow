@@ -67,6 +67,13 @@ describe('runChecks', () => {
     expect(verdict.results[2].detail).toContain('sku-1: Acme');
   });
 
+  it('fails, without crashing, when items are null or not objects', async () => {
+    const verdict = await runChecks(spec, encode([null, 7]));
+
+    expect(verdict.passed).toBe(false);
+    expect(verdict.results[2].detail).toContain('2 required terms missing');
+  });
+
   it('fails every structural check when the deliverable is not JSON', async () => {
     const verdict = await runChecks(spec, new TextEncoder().encode('not json'));
 
@@ -108,6 +115,14 @@ describe('parseSpec', () => {
     ['unknown check type', encode({ version: 1, title: 't', checks: [{ type: 'vibes' }] })],
     ['count without equals', encode({ version: 1, title: 't', checks: [{ type: 'count' }] })],
     ['wrong version', encode({ version: 2, title: 't', checks: [{ type: 'count', equals: 1 }] })],
+    [
+      'a schema that does not compile',
+      encode({
+        version: 1,
+        title: 't',
+        checks: [{ type: 'json-schema', schema: { type: 'strng' } }],
+      }),
+    ],
   ])('rejects %s', (_name, bytes) => {
     expect(() => parseSpec(bytes)).toThrow('Invalid acceptance spec');
   });
@@ -174,6 +189,17 @@ describe('evaluate', () => {
     const evaluation = await evaluate({ ...commitment, resultUri: 'https://x/huge' });
 
     expect(evaluation.results[0].detail).toContain('is larger than');
+  });
+
+  it('throws, instead of failing the seller, when the deliverable host is temporarily down', async () => {
+    const commitment = await commit(products);
+
+    vi.stubGlobal('fetch', async (uri: string) =>
+      uri.endsWith('/result') ? new Response('busy', { status: 503 }) : serve(uri),
+    );
+
+    await expect(evaluate(commitment)).rejects.toThrow('HTTP 503');
+    expect((await evaluate(commitment, { unreachableFails: true })).passed).toBe(false);
   });
 
   it('throws when the spec does not match its committed hash', async () => {

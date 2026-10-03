@@ -53,7 +53,7 @@ to buy, devnet USDC ([faucet.circle.com](https://faucet.circle.com)).
 | `get_job` | anyone | Status, parties, amount, deadline, spec and result URIs and hashes. |
 | `accept_job` | seller | Commit to deliver before the deadline. |
 | `submit_result` | seller | Commit the deliverable by hash; starts the review window. |
-| `evaluate_job` | evaluator | Run the spec and settle: pay the seller or refund the buyer. |
+| `evaluate_job` | evaluator | Run the spec and settle: pay the seller or refund the buyer. Fails without settling if the deliverable is only temporarily unreachable. |
 | `settle_expired` | buyer / seller | Recover funds when the other side went silent. |
 
 ## Acceptance spec

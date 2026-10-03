@@ -1,4 +1,9 @@
-import { type Address, getBase58Encoder, type Signature } from '@solana/kit';
+import {
+  type Address,
+  getBase58Encoder,
+  type ReadonlyUint8Array,
+  type Signature,
+} from '@solana/kit';
 import type { Rpc } from './connection.ts';
 import { isoTime } from './format.ts';
 import {
@@ -27,14 +32,22 @@ const TRANSACTION_CONFIG = { encoding: 'json', maxSupportedTransactionVersion: 0
 
 const snakeCase = (name: string) => name.replace(/(?!^)([A-Z])/g, '_$1').toLowerCase();
 
+/** Unknown instruction data (a failed call, a newer program version) is not an error here. */
+function identify(data: ReadonlyUint8Array): string | undefined {
+  try {
+    return snakeCase(AgentEscrowInstruction[identifyAgentEscrowInstruction({ data })]);
+  } catch {
+    return undefined;
+  }
+}
+
 function instructionName(transaction: RawTransaction): string | undefined {
   const { accountKeys = [], instructions = [] } = transaction?.transaction.message ?? {};
   const ours = instructions.find(
     (instruction) => accountKeys[instruction.programIdIndex] === AGENT_ESCROW_PROGRAM_ADDRESS,
   );
-  const data = ours && getBase58Encoder().encode(ours.data);
 
-  return data && snakeCase(AgentEscrowInstruction[identifyAgentEscrowInstruction({ data })]);
+  return ours && identify(getBase58Encoder().encode(ours.data));
 }
 
 /** The transactions that touched a job, newest first, each labelled with its instruction. */

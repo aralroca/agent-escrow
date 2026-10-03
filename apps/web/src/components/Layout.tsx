@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Link, Outlet, useLocation, useSearchParams } from 'react-router-dom';
+import { rpcUrl, usesCustomRpc } from '../lib/chain.ts';
 import { Shield } from './Icons.tsx';
 
 export const REPO_URL = 'https://github.com/aralroca/agent-escrow';
@@ -155,12 +156,22 @@ function useSectionScroll() {
   );
 }
 
+function CustomRpcNotice() {
+  return (
+    <p className="rpc-notice" role="note">
+      This link makes the page read from <code>{rpcUrl}</code>, not from the default Solana
+      endpoint. Only trust what you see if you trust that endpoint. <a href="./">Use the default</a>
+    </p>
+  );
+}
+
 export function Layout() {
   useSectionScroll();
 
   return (
     <>
       <Header />
+      {usesCustomRpc && <CustomRpcNotice />}
       <main>
         <Outlet />
       </main>

@@ -43,6 +43,9 @@ Tests live in `programs/agent_escrow/tests/` (LiteSVM) and `e2e/` (local validat
 | Nobody commits to an impossible job | `accept_job` refuses when the spec is unreachable or does not match its on-chain hash | `refuses to accept a job whose spec no longer matches its committed hash` |
 | A swapped file is detected | Spec and deliverable are verified against their SHA-256 before any check runs | `fails when the deliverable does not match its committed hash`, `throws when the spec does not match its committed hash` |
 | Hostile URLs cannot hang the evaluator | Downloads are http(s) only, limited to 30 seconds and 5 MB | `only downloads over http(s)`, `refuses deliverables above the size cap` |
+| A network glitch is not a verdict | A deliverable that is only temporarily unreachable makes `evaluate_job` fail without settling; only a wrong hash, a missing file or an oversized one is judged as failed | `throws, instead of failing the seller, when the deliverable host is temporarily down` |
+| A late evaluator cannot take the payment back | After the review window only an approval or the seller's claim can settle | `a_late_evaluator_can_still_approve_but_no_longer_reject` |
+| A link cannot silently change the data source | `?rpc=` is never stored and shows a notice while active | `says so when a link chooses the data source, and does not remember it` |
 | Closing a token account cannot block a verdict | Settlements create the destination token account when it is missing | covered by the settlement paths in `e2e/` |
 | Verdicts are reproducible | The same check runner runs in the evaluator and in the browser | `reproduces a passing verdict in the browser`, `reproduces a failing verdict and shows which check failed` |
 
@@ -71,11 +74,13 @@ Tests live in `programs/agent_escrow/tests/` (LiteSVM) and `e2e/` (local validat
    party from the machine running the MCP server. Only http(s) is allowed and the content is never
    returned to the caller, but the request itself is made. Do not run the server in a network
    where a blind GET to an internal address is dangerous.
-8. **Rent stays in the job account.** Job accounts are kept so the history remains readable; their
+8. **Job titles come from the spec.** The explorer downloads each job's spec to show its title,
+   which reveals a visitor's IP address to whoever hosts that file.
+9. **Rent stays in the job account.** Job accounts are kept so the history remains readable; their
    rent (about 0.006 SOL) is not returned to the buyer. Vault rent is.
-9. **The fee wallet cannot act as a seller.** Its token account would appear twice in a payout and
+10. **The fee wallet cannot act as a seller.** Its token account would appear twice in a payout and
    the program refuses duplicate writable accounts. Such a job can still be rejected or refunded.
-10. **Devnet constants.** The USDC mint and the fee wallet are compile-time constants for devnet.
+11. **Devnet constants.** The USDC mint and the fee wallet are compile-time constants for devnet.
     A mainnet deployment needs new constants, an upgrade-authority policy and an audit.
 
 ## Reporting

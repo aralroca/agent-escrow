@@ -28,4 +28,6 @@ pub enum ErrorCode {
     MissingProfile,
     #[msg("Arithmetic overflow")]
     Overflow,
+    #[msg("The review window has closed, so the submission can no longer be rejected")]
+    ReviewWindowClosed,
 }

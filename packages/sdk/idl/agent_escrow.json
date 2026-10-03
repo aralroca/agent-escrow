@@ -611,6 +611,11 @@
       "code": 6012,
       "name": "Overflow",
       "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6013,
+      "name": "ReviewWindowClosed",
+      "msg": "The review window has closed, so the submission can no longer be rejected"
     }
   ],
   "types": [

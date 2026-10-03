@@ -1,7 +1,7 @@
 mod common;
 
 use {
-    agent_escrow::{instruction, JobStatus},
+    agent_escrow::{error::ErrorCode, instruction, JobStatus},
     common::*,
     litesvm_token::Transfer,
     solana_signer::Signer,
@@ -117,15 +117,20 @@ fn provider_collects_when_nobody_reviews_in_time() {
 }
 
 #[test]
-fn evaluator_can_still_judge_after_the_window_if_unclaimed() {
+fn a_late_evaluator_can_still_approve_but_no_longer_reject() {
     let mut env = Env::new();
     let evaluator = env.evaluator.insecure_clone();
 
     env.submitted_job(1, AMOUNT);
-    env.warp(REVIEW_WINDOW + 1);
+    env.submitted_job(2, AMOUNT);
+    env.warp(REVIEW_WINDOW);
     env.reject(1, &evaluator).unwrap();
+    env.warp(1);
 
+    assert_code(env.reject(2, &evaluator), ErrorCode::ReviewWindowClosed);
+    env.complete(2, &evaluator).unwrap();
     assert_eq!(env.job_state(1).status, JobStatus::Rejected);
+    assert_eq!(env.job_state(2).status, JobStatus::Completed);
 }
 
 #[test]

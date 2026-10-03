@@ -1,4 +1,4 @@
-import type { Spec } from '@agent-escrow/checks';
+import { type Spec, toHex } from '@agent-escrow/checks';
 import {
   type Activity,
   type AgentView,
@@ -60,9 +60,14 @@ export function loadActivity({ address, status }: JobView): Promise<Activity[]> 
   );
 }
 
+/** Two jobs may share a URL but commit different content, so the hash is part of the identity. */
+export function specKey(job: JobRecord): string {
+  return `${job.specUri}#${toHex(job.specHash)}`;
+}
+
 /** The acceptance spec of a job. Verified against its on-chain hash, so it never goes stale. */
 export function loadSpec(job: JobRecord): Promise<Spec> {
-  return cached(`spec:${job.specUri}`, Number.POSITIVE_INFINITY, () => fetchJobSpec(job));
+  return cached(`spec:${specKey(job)}`, Number.POSITIVE_INFINITY, () => fetchJobSpec(job));
 }
 
 /** Display names by wallet address, for the agents that registered one. */

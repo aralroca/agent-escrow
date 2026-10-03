@@ -438,7 +438,6 @@ fn settlements_after_acceptance_require_the_provider_profile() {
     let mut expire = {
         env.create_job(2, AMOUNT).unwrap();
         env.accept(2, &provider).unwrap();
-        env.warp(3_601);
         env.return_accounts(2, &client)
     };
 
@@ -448,6 +447,7 @@ fn settlements_after_acceptance_require_the_provider_profile() {
         env.send(instruction::Reject {}, reject, &evaluator),
         ErrorCode::MissingProfile,
     );
+    env.warp(3_601);
     assert_code(
         env.send(instruction::Refund {}, expire, &client),
         ErrorCode::MissingProfile,

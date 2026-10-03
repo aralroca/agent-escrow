@@ -175,3 +175,13 @@
     display: none;
   }
 }
+
+.rpc-notice {
+  margin: 0;
+  padding: 12px 24px;
+  background: var(--warn-bg);
+  color: var(--warn);
+  font-size: 14px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}

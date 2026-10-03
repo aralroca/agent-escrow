@@ -9,7 +9,8 @@ import type {
   Sha256Check,
 } from './types.ts';
 
-type Item = Record<string, unknown>;
+/** Deliverables are untrusted: an item may be anything, including null. */
+type Item = Record<string, unknown> | null | undefined;
 
 const MAX_LISTED = 3;
 
@@ -46,7 +47,7 @@ function count(check: CountCheck, { data }: Deliverable): CheckResult {
 
 function missingTerms(check: ContainsAllCheck, items: Item[]): string[] {
   const textByKey = new Map(
-    items.map((item) => [String(item[check.key]), String(item[check.field] ?? '')]),
+    items.map((item) => [String(item?.[check.key]), String(item?.[check.field] ?? '')]),
   );
 
   return Object.entries(check.terms).flatMap(([key, terms]) =>

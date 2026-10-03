@@ -40,6 +40,8 @@ export const AGENT_ESCROW_ERROR__UNSUPPORTED_MINT = 0x177a; // 6010
 export const AGENT_ESCROW_ERROR__MISSING_PROFILE = 0x177b; // 6011
 /** Overflow: Arithmetic overflow */
 export const AGENT_ESCROW_ERROR__OVERFLOW = 0x177c; // 6012
+/** ReviewWindowClosed: The review window has closed, so the submission can no longer be rejected */
+export const AGENT_ESCROW_ERROR__REVIEW_WINDOW_CLOSED = 0x177d; // 6013
 
 export type AgentEscrowError =
   | typeof AGENT_ESCROW_ERROR__DEADLINE_NOT_REACHED
@@ -52,6 +54,7 @@ export type AgentEscrowError =
   | typeof AGENT_ESCROW_ERROR__INVALID_TEXT
   | typeof AGENT_ESCROW_ERROR__MISSING_PROFILE
   | typeof AGENT_ESCROW_ERROR__OVERFLOW
+  | typeof AGENT_ESCROW_ERROR__REVIEW_WINDOW_CLOSED
   | typeof AGENT_ESCROW_ERROR__REVIEW_WINDOW_OPEN
   | typeof AGENT_ESCROW_ERROR__UNAUTHORIZED
   | typeof AGENT_ESCROW_ERROR__UNSUPPORTED_MINT;
@@ -69,6 +72,7 @@ if (process.env["NODE_ENV"] !== "production") {
     [AGENT_ESCROW_ERROR__INVALID_TEXT]: `Text field is empty or longer than allowed`,
     [AGENT_ESCROW_ERROR__MISSING_PROFILE]: `The provider profile account is required`,
     [AGENT_ESCROW_ERROR__OVERFLOW]: `Arithmetic overflow`,
+    [AGENT_ESCROW_ERROR__REVIEW_WINDOW_CLOSED]: `The review window has closed, so the submission can no longer be rejected`,
     [AGENT_ESCROW_ERROR__REVIEW_WINDOW_OPEN]: `The review window is still open`,
     [AGENT_ESCROW_ERROR__UNAUTHORIZED]: `The signer is not allowed to perform this action on the job`,
     [AGENT_ESCROW_ERROR__UNSUPPORTED_MINT]: `Jobs can only be paid in USDC`,

@@ -78,6 +78,13 @@ pub struct Job {
 }
 
 impl Job {
+    /// Unix time until which the evaluator may reject; after it the provider may claim.
+    pub fn review_ends(&self) -> Result<i64> {
+        let ends = self.submitted_at.checked_add(self.review_window);
+
+        ends.ok_or_else(|| error!(crate::error::ErrorCode::Overflow))
+    }
+
     /// Records the final status of the job and when it was reached.
     pub fn settle(&mut self, status: JobStatus) -> Result<()> {
         self.status = status;

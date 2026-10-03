@@ -126,8 +126,8 @@ function Network() {
       <p className="lead">
         Program <AddressLink address={AGENT_ESCROW_PROGRAM_ADDRESS} /> on Solana devnet. This site
         has no server: it reads the program accounts through <code>{rpcUrl}</code>. The public
-        endpoint is rate limited; open the site once with <code>?rpc=https://your-endpoint</code> to
-        use another one in this browser.
+        endpoint is rate limited; add <code>?rpc=https://your-endpoint</code> to the address to read
+        from another one. It applies only while it is in the address, and the page says so.
       </p>
       <p className="muted">
         Before you rely on it, read the <Link to="/security">security notes and limits</Link>.

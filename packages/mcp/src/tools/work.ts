@@ -60,10 +60,18 @@ export const evaluateJobTool = defineTool({
   description:
     'As the evaluator, run the committed acceptance spec against the delivery and settle the job: ' +
     'pay the seller if every check passes, refund the buyer otherwise. The verdict is ' +
-    'deterministic and anyone can reproduce it from the on-chain hashes.',
-  input: z.object({ job: jobSchema }),
-  async run({ connection, signer }, { job }) {
-    const { verdict, action, signature } = await evaluateJob(connection, signer, job);
+    'deterministic and anyone can reproduce it. If the deliverable is only temporarily ' +
+    'unreachable the call fails without settling, so retry it; a verdict cannot be undone.',
+  input: z.object({
+    job: jobSchema,
+    reject_if_unreachable: z
+      .boolean()
+      .default(false)
+      .describe('After retrying, rule an unreachable deliverable as failed and refund the buyer'),
+  }),
+  async run({ connection, signer }, { job, reject_if_unreachable: unreachableFails }) {
+    const judgement = await evaluateJob(connection, signer, job, { unreachableFails });
+    const { verdict, action, signature } = judgement;
 
     return { action, signature, passed: verdict.passed, checks: verdict.results };
   },

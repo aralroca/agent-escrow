@@ -56,6 +56,23 @@ export function parseJson(bytes: Uint8Array): unknown {
   }
 }
 
+/** A JSON Schema that cannot be compiled could never be run, so the spec is refused. */
+function assertSchemasCompile(spec: Spec): Spec {
+  const schemas = spec.checks.flatMap((check) =>
+    check.type === 'json-schema' ? [check.schema] : [],
+  );
+
+  try {
+    schemas.forEach((schema) => {
+      new Ajv({ strict: false }).compile(schema);
+    });
+  } catch (error) {
+    throw new Error(`Invalid acceptance spec: ${(error as Error).message}`);
+  }
+
+  return spec;
+}
+
 /** Parses and validates an acceptance spec. Throws when it is not a valid v1 spec. */
 export function parseSpec(bytes: Uint8Array): Spec {
   const spec = parseJson(bytes);
@@ -64,5 +81,5 @@ export function parseSpec(bytes: Uint8Array): Spec {
     throw new Error(`Invalid acceptance spec: ${ajv.errorsText(validateSpec.errors)}`);
   }
 
-  return spec as Spec;
+  return assertSchemasCompile(spec as Spec);
 }

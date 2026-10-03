@@ -74,10 +74,7 @@ pub fn handle_complete(ctx: Context<Release>) -> Result<()> {
 /// The provider collects once the review window closed without a verdict.
 pub fn handle_claim_timeout(ctx: Context<Release>) -> Result<()> {
     let job = &ctx.accounts.job;
-    let review_ends = job
-        .submitted_at
-        .checked_add(job.review_window)
-        .ok_or(ErrorCode::Overflow)?;
+    let review_ends = job.review_ends()?;
 
     require_keys_eq!(
         ctx.accounts.authority.key(),

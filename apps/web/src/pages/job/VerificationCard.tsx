@@ -2,7 +2,7 @@ import type { Check, CheckResult, Evaluation } from '@agent-escrow/checks';
 import { describeError, verifyJob } from '@agent-escrow/sdk';
 import { useState } from 'react';
 import { CheckCircle, CrossCircle, PendingCircle } from '../../components/Icons.tsx';
-import { type JobRow, loadSpec } from '../../lib/data.ts';
+import { type JobRow, loadSpec, specKey } from '../../lib/data.ts';
 import { useAsync } from '../../lib/useAsync.ts';
 
 type Run = { verdict?: Evaluation; error?: string; running?: boolean };
@@ -85,7 +85,7 @@ function Summary({ run, status }: { run: Run; status: string }) {
 }
 
 export function VerificationCard({ job }: { job: JobRow }) {
-  const spec = useAsync(() => loadSpec(job.record), job.view.specUri);
+  const spec = useAsync(() => loadSpec(job.record), specKey(job.record));
   const { run, verify } = useVerification(job);
   const hasSubmission = Boolean(job.view.resultUri);
   const results = run.verdict?.results.filter((result) => result.type !== 'integrity');
