@@ -144,7 +144,7 @@ Every screen in the video must correspond to a transaction listed in `docs/e2e.m
 - [x] Program deployed on devnet and visible in the explorer
 - [x] `docs/e2e.md` has devnet signatures for the full run and the failure paths
 - [ ] Site live and `LINKS_EXTERNAL=1 pnpm test:browser` passes
-- [ ] `npx -y agent-escrow-mcp` works from a clean directory
+- [x] `npx -y agent-escrow-mcp` works from a clean directory (published 0.1.0 on 2026-10-03)
 - [ ] Repository public, README current
 - [ ] Both videos uploaded and reachable without login
 - [ ] Every claim above re-read against the product
