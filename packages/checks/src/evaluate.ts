@@ -1,0 +1,55 @@
+import { runCheck } from './checks.ts';
+import { sha256Hex } from './hash.ts';
+import { parseJson, parseSpec } from './spec.ts';
+import type { Spec, Verdict } from './types.ts';
+
+export type Commitment = {
+  specUri: string;
+  specHash: string;
+  resultUri: string;
+  resultHash: string;
+};
+
+export type Evaluation = Verdict & { spec: Spec };
+
+/** Runs every check of a spec against the raw bytes of a deliverable. */
+export async function runChecks(spec: Spec, bytes: Uint8Array): Promise<Verdict> {
+  const deliverable = { data: parseJson(bytes), hash: await sha256Hex(bytes) };
+  const results = spec.checks.map((check) => runCheck(check, deliverable));
+
+  return { passed: results.every((result) => result.passed), results };
+}
+
+/** Downloads a file and refuses it unless its sha256 equals the committed hash. */
+export async function fetchVerified(uri: string, expectedHash: string): Promise<Uint8Array> {
+  const response = await fetch(uri);
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  const actualHash = await sha256Hex(bytes);
+
+  if (!response.ok) throw new Error(`Could not fetch ${uri}: HTTP ${response.status}`);
+  if (actualHash !== expectedHash.toLowerCase()) {
+    throw new Error(`Content at ${uri} does not match the committed hash`);
+  }
+
+  return bytes;
+}
+
+function integrityFailure(error: unknown): Verdict {
+  const detail = error instanceof Error ? error.message : String(error);
+
+  return { passed: false, results: [{ type: 'integrity', passed: false, detail }] };
+}
+
+/**
+ * Reproduces the verdict for a job from its on-chain commitments.
+ * A spec that cannot be verified throws (nobody can judge the job);
+ * a deliverable that cannot be verified fails (the seller did not deliver what it committed).
+ */
+export async function evaluate(commitment: Commitment): Promise<Evaluation> {
+  const spec = parseSpec(await fetchVerified(commitment.specUri, commitment.specHash));
+  const verdict = await fetchVerified(commitment.resultUri, commitment.resultHash)
+    .then((bytes) => runChecks(spec, bytes))
+    .catch(integrityFailure);
+
+  return { ...verdict, spec };
+}

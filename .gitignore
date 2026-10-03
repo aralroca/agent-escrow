@@ -1,0 +1,12 @@
+node_modules
+dist
+target
+.anchor
+test-ledger
+.surfpool
+*.log
+.DS_Store
+.env
+.env.*
+.claude
+keys
