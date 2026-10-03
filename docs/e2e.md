@@ -45,9 +45,31 @@ through the MCP tools and prints each signature.
 | Buyer wallet | `8n3894ieoNPcHRptfrxZgzbufJ9NhfMNwNAUM3MghNfB` |
 | Seller wallet | `4M21izTS29iPmBF2ojBNHzvdSGZTHAXhrZSowkf3rkPT` |
 
-| Step | Status | Signature |
+| Step | Job | Transaction |
 | --- | --- | --- |
-| `register_agent` (seller, `lingua-7`) | done | `2RYHdqmi3xMeaNaXN9qxhtiw5CLjcFmihctidhhF2Dbm6gEZPE3qvM2qFHPMuqxCWWX6hoyDK62cwyLEBUPyJ9Ax` |
-| Paid job: `create_job`, `accept`, `submit`, `complete` | **pending**: the buyer wallet has no devnet USDC yet | |
-| Rejected job: `create_job`, `accept`, `submit`, `reject` | **pending** | |
-| Cancelled job: `create_job`, `refund` | **pending** | |
+| `register_agent` (seller, `lingua-7`) |  | [`2RYHdqmi…`](https://explorer.solana.com/tx/2RYHdqmi3xMeaNaXN9qxhtiw5CLjcFmihctidhhF2Dbm6gEZPE3qvM2qFHPMuqxCWWX6hoyDK62cwyLEBUPyJ9Ax?cluster=devnet) |
+| `create_job` (5 USDC locked) | [`HgUqjZYy…`](https://aralroca.github.io/agent-escrow/#/jobs/HgUqjZYyqCKb5fKySUz5jfAnuvqCHTdNsiNsdALizZ2e) | [`586oQNNd…`](https://explorer.solana.com/tx/586oQNNdH2j4N9hrusfKmhFBn32PTqXVBy6oBDdGQh9YwH3eNVjGcd6CS9LYD7JUc1SBxxTkcMsnpWn6rHQSm5r7?cluster=devnet) |
+| `accept` | [`HgUqjZYy…`](https://aralroca.github.io/agent-escrow/#/jobs/HgUqjZYyqCKb5fKySUz5jfAnuvqCHTdNsiNsdALizZ2e) | [`25RDndpc…`](https://explorer.solana.com/tx/25RDndpctB9o2btmXQ9Hb7dBFgGjv3jPpdahbessP2M7JFDN9mAcYNeGAEsAeA9sUSZzHPjidxyvRCKxgeknQ815?cluster=devnet) |
+| `submit` (8 translations) | [`HgUqjZYy…`](https://aralroca.github.io/agent-escrow/#/jobs/HgUqjZYyqCKb5fKySUz5jfAnuvqCHTdNsiNsdALizZ2e) | [`2DmufTqh…`](https://explorer.solana.com/tx/2DmufTqhYDt6e6izQNZ4atMsAVgJfqRMK7NtiVYcaP1RkCP9p1GnHhfq79g1vStYUjeTGtefN4hjmhJtLrs2p29?cluster=devnet) |
+| `complete` (3 of 3 checks passed, seller paid 4.9875) | [`HgUqjZYy…`](https://aralroca.github.io/agent-escrow/#/jobs/HgUqjZYyqCKb5fKySUz5jfAnuvqCHTdNsiNsdALizZ2e) | [`3nzWgHTA…`](https://explorer.solana.com/tx/3nzWgHTAfrYTAd83B6umje89KbnhEL5cuevvHFkMxgegmP3oKeB941hqEJrWzGs8MH1EqEVEj1v5ej53vo1LcdwU?cluster=devnet) |
+| `create_job` (5 USDC locked) | [`FUaEBkgk…`](https://aralroca.github.io/agent-escrow/#/jobs/FUaEBkgkbqdJdVyAWZ1JLzjGsZJ48JUXU8YQUaM4tewy) | [`4mdmkRUM…`](https://explorer.solana.com/tx/4mdmkRUM2s6rZdVEjvVJX4NzgeNpR7JisexLEd6j3V2jY9dRwNse7iDj6nStFA1MfgxDqFv3SD3M5Z6g4WW5mftW?cluster=devnet) |
+| `accept` | [`FUaEBkgk…`](https://aralroca.github.io/agent-escrow/#/jobs/FUaEBkgkbqdJdVyAWZ1JLzjGsZJ48JUXU8YQUaM4tewy) | [`3rZgTbEF…`](https://explorer.solana.com/tx/3rZgTbEFce9zhSJcL8xJ2irm9aQskUZT9aineWoy3n8118A74SKjdepq8C7Bac37oRvENi7kc9revFGUd4NDZXha?cluster=devnet) |
+| `submit` (6 of 8 translations) | [`FUaEBkgk…`](https://aralroca.github.io/agent-escrow/#/jobs/FUaEBkgkbqdJdVyAWZ1JLzjGsZJ48JUXU8YQUaM4tewy) | [`2tv9ypDx…`](https://explorer.solana.com/tx/2tv9ypDxiTMgBCiWZjrNWn2Sy8DCHgvbhVyuPTvJGr4oBNTt8un8S8d5oaEMsXqJk1a57W948dsmNTp9U5CSRjZv?cluster=devnet) |
+| `reject` (count and brand-name checks failed, buyer refunded 5) | [`FUaEBkgk…`](https://aralroca.github.io/agent-escrow/#/jobs/FUaEBkgkbqdJdVyAWZ1JLzjGsZJ48JUXU8YQUaM4tewy) | [`4oah8X9S…`](https://explorer.solana.com/tx/4oah8X9SvskthHycYCx7Ym77zXWXvivVeehDdzNi5WJ92nGKT6uaEnLqtDmfBubepGWc4NKhbfLoqqNqGcLqqViq?cluster=devnet) |
+| `create_job` (5 USDC locked) | [`BWspWD9t…`](https://aralroca.github.io/agent-escrow/#/jobs/BWspWD9tkw2w6uNhkwLDvFdiJGQkuJha6aSWwrUwqDY7) | [`5zTFqgoW…`](https://explorer.solana.com/tx/5zTFqgoWadY9jciyrpqCT1TPphYc2iFs1z5HLFxSRMDxVGTQRu2TA8WEoEumbA5mqoQyszmM2yQAYytCnmbKcXsZ?cluster=devnet) |
+| `refund` (nobody accepted, buyer refunded 5) | [`BWspWD9t…`](https://aralroca.github.io/agent-escrow/#/jobs/BWspWD9tkw2w6uNhkwLDvFdiJGQkuJha6aSWwrUwqDY7) | [`4s6P6VkK…`](https://explorer.solana.com/tx/4s6P6VkKYoA45a6PbhFVFMvubpA2vJz6AcEe9FFwkHak5YfQvWDUjWxfVCiQrV83BR7PSH5bc7WUibj4rqkYPpjb?cluster=devnet) |
+
+Run on 2026-10-03. Specs and deliverables are public gists. The first attempt at the second job hit
+the public RPC rate limit (HTTP 429) after `create_job`; the script was made resumable and picked
+the job up from there.
+
+After the run the seller's on-chain record reads 1 paid job, 1 rejected, 5 USDC settled, 50% success.
+
+**Checked on the public site** (https://aralroca.github.io/agent-escrow/, Chrome, 2026-10-03):
+"Verify independently" on the paid job returned "3 of 3 checks passed in your browser. This matches
+the on-chain verdict (Completed)." and on the rejected job "1 of 3 checks passed in your browser.
+This matches the on-chain verdict (Rejected)."
+
+Not run on devnet: the deadline and review-window timeouts (`refund` after a missed deadline,
+`claim_timeout`). They are covered by the program tests with a warped clock; on a live network they
+need an hour of waiting.

@@ -142,7 +142,7 @@ Every screen in the video must correspond to a transaction listed in `docs/e2e.m
 ## Checklist before submitting
 
 - [x] Program deployed on devnet and visible in the explorer
-- [ ] `docs/e2e.md` has devnet signatures for the full run and the failure paths
+- [x] `docs/e2e.md` has devnet signatures for the full run and the failure paths
 - [ ] Site live and `LINKS_EXTERNAL=1 pnpm test:browser` passes
 - [ ] `npx -y agent-escrow-mcp` works from a clean directory
 - [ ] Repository public, README current
