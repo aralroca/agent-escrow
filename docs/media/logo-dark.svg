@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 96" role="img" aria-label="Agent Escrow">
+  <title>Agent Escrow</title>
+  <rect x="0" y="8" width="80" height="80" rx="24" fill="#ffffff"/>
+  <g transform="translate(16 24) scale(2)" fill="none" stroke="#212121" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4z"/>
+    <path d="M8.5 12.5l2.5 2.5 4.5-5"/>
+  </g>
+  <text x="104" y="66" font-family="Geist, Inter, system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="56" font-weight="600" letter-spacing="-2" fill="#ffffff">Agent Escrow</text>
+</svg>

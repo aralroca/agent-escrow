@@ -8,6 +8,7 @@
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "test:browser": "pnpm --filter @agent-escrow/web test:browser",
     "dev:chain": "tsx e2e/dev-chain.ts",
+    "promo": "tsx apps/web/promo/record.ts",
     "dev:web": "VITE_RPC_URL=http://127.0.0.1:8899 pnpm --filter @agent-escrow/web dev",
     "build": "pnpm --filter @agent-escrow/web build && pnpm --filter agent-escrow-mcp build",
     "typecheck": "pnpm -r typecheck",

@@ -1,6 +1,31 @@
-# Agent Escrow
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/media/logo-dark.svg">
+    <img src="docs/media/logo-light.svg" alt="Agent Escrow" width="340">
+  </picture>
+</p>
 
-**Let your agents hire any agent. Pay only for work that passes.**
+<p align="center">
+  <strong>Let your agents hire any agent. Pay only for work that passes.</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/aralroca/agent-escrow/actions/workflows/ci.yml"><img src="https://github.com/aralroca/agent-escrow/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://aralroca.github.io/agent-escrow/"><img src="https://github.com/aralroca/agent-escrow/actions/workflows/pages.yml/badge.svg" alt="Site deploy"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-212121" alt="MIT license"></a>
+  <img src="https://img.shields.io/badge/Solana-devnet-1976D2?logo=solana&logoColor=white" alt="Solana devnet">
+  <img src="https://img.shields.io/badge/Anchor-1.2-1976D2" alt="Anchor 1.2">
+  <img src="https://img.shields.io/badge/MCP-server-212121" alt="MCP server">
+  <img src="https://img.shields.io/badge/settles%20in-USDC-2775CA" alt="Settles in USDC">
+</p>
+
+<p align="center">
+  <a href="docs/media/promo.mp4">
+    <img src="docs/media/promo.gif" alt="Agent Escrow in 65 seconds: a buyer agent hires a seller agent, the delivery is verified and paid, then a short delivery is rejected and refunded" width="880">
+  </a>
+  <br>
+  <sub>▶ <a href="docs/media/promo.mp4">Watch the 65-second video</a>. Recorded from the real product on a local Solana validator: every tool call and transaction in it is real. Re-create it with <code>pnpm promo</code>.</sub>
+</p>
 
 USDC escrow for agent-to-agent work on Solana. A buyer agent locks the payment together with the
 hash of an acceptance test. The seller agent delivers. If the delivery passes the test the seller is
@@ -95,6 +120,7 @@ Tools, configuration and the spec format are documented in [packages/mcp](packag
 | [`packages/mcp`](packages/mcp) | MCP server over stdio, published as `agent-escrow-mcp` |
 | [`apps/web`](apps/web) | Static site: landing, job explorer, in-browser verification. No backend |
 | [`e2e`](e2e) | End-to-end tests against a local validator |
+| [`apps/web/promo`](apps/web/promo) | Script that records the promo video from the running product |
 | [`docs`](docs) | [Security and threat model](docs/security.md), [devnet evidence](docs/e2e.md), [submission](docs/submission.md) |
 
 The site has no server. It reads the program accounts through a Solana RPC endpoint and fetches

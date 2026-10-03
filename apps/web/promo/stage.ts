@@ -11,7 +11,7 @@ const OVERLAY = `
   addEventListener('DOMContentLoaded', () => {
     const style = document.createElement('style');
     style.textContent = \`
-      #promo-cursor { position: fixed; z-index: 99999; left: 0; top: 0; width: 26px; height: 26px; margin: -4px 0 0 -4px; pointer-events: none;
+      #promo-cursor { position: fixed; z-index: 99999; left: 0; top: 0; width: 26px; height: 26px; margin: -4px 0 0 -4px; pointer-events: none; opacity: 0;
         background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 2l15 11h-8l-3 8z' fill='%23212121' stroke='%23fff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat; }
       #promo-caption { position: fixed; z-index: 99998; left: 50%; bottom: 44px; transform: translateX(-50%); max-width: 1500px; padding: 18px 30px; border-radius: 20px;
         background: rgba(33,33,33,.94); color: #fff; font: 500 30px/1.3 Geist, system-ui, sans-serif; text-align: center; box-shadow: 0 16px 40px rgba(0,0,0,.28); transition: opacity .3s; }
@@ -20,10 +20,15 @@ const OVERLAY = `
     const cursor = Object.assign(document.createElement('div'), { id: 'promo-cursor' });
     const caption = Object.assign(document.createElement('div'), { id: 'promo-caption' });
 
+    // The site is laid out for reading, not for video: enlarge it so it fills a 1080p frame.
+    const site = document.getElementById('root');
+
+    if (site) site.style.zoom = '1.5';
     document.head.append(style);
     document.body.append(cursor, caption);
     addEventListener('mousemove', (event) => {
       cursor.style.transform = 'translate(' + event.clientX + 'px,' + event.clientY + 'px)';
+      cursor.style.opacity = '1';
     });
     window.setCaption = (text) => { caption.textContent = text; };
   });

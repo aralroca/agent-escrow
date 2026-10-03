@@ -72,7 +72,7 @@ const TERMINAL_CSS = `
   .who { display: flex; align-items: center; gap: 14px; font-size: 26px; font-weight: 600; padding-bottom: 12px; border-bottom: 1px solid #3a3a3a; }
   .dot { width: 14px; height: 14px; border-radius: 7px; background: #90caf9; }
   .seller .dot { background: #9be3bf; }
-  .line { font-family: "Geist Mono", monospace; font-size: 24px; line-height: 1.5; opacity: 0; transform: translateY(8px); animation: rise .35s ease forwards; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .line { font-family: "Geist Mono", monospace; font-size: 27px; line-height: 1.5; opacity: 0; transform: translateY(8px); animation: rise .35s ease forwards; white-space: pre-wrap; overflow-wrap: anywhere; }
   .call { color: #90caf9; }
   .ok { color: #9be3bf; }
   .bad { color: #ff9c94; }

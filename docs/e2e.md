@@ -8,9 +8,9 @@ executed.
 | Suite | Command | Where it runs | Result (2026-10-03) |
 | --- | --- | --- | --- |
 | Program | `cargo test` | LiteSVM, the compiled `.so` | 34 passed |
-| Unit | `pnpm test` | Node | 57 passed |
+| Unit | `pnpm test` | Node | 60 passed |
 | SDK + MCP end-to-end | `pnpm test:e2e` | Local validator with the real program | 29 passed |
-| Site | `pnpm test:browser` | Chromium, desktop and mobile, local validator | 32 passed, 2 skipped (external links) |
+| Site | `pnpm test:browser` | Chromium, desktop and mobile, local validator | 36 passed, 2 skipped (external links) |
 
 The local validator loads the same `agent_escrow.so` that is deployed, and a USDC mint placed at
 the real USDC address with a test mint authority (`e2e/usdc-mint.json`).
@@ -29,6 +29,7 @@ the real USDC address with a test mint authority (`e2e/usdc-mint.json`).
 | Malformed MCP calls | `rejects create_job with ... without moving funds` (six cases) |
 | Wrong party | `rejects calls on jobs that do not exist or from the wrong party` |
 | Spec swapped after funding | `refuses to accept a job whose spec no longer matches its committed hash` |
+| The whole suite on GitHub Actions | CI run on the first push: program build, LiteSVM, end-to-end and browser jobs all green |
 | Reload and reconnect on the site | `survives a reload on an inner route` |
 | Every link leads somewhere real | `every internal link leads to a real page`, `no link is a placeholder` |
 
